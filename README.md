@@ -15,7 +15,7 @@ The STARDUST repository consists of the following core submodules:
 ### 1️⃣ **STARDUST-MedSAM2**
 A customized version of the **Segment Anything Model 2 (SAM2)** adapted for tumor segmentation in radiotherapy planning. This module includes fine-tuning methods, evaluation tools, and a GUI for interactive segmentation. 
 
-🔗 **[More details](./STARDUST-MedSAM-MG/README.md)**
+🔗 **[More details](./STARDUST_MedSAM-MG/README.md)**
 
 ---
 
@@ -35,7 +35,7 @@ A **Python GUI tool** to review extracted cases and determine their suitability 
 - **Selection and labeling** of cases for training
 - **Advanced filtering** to refine TPS-mined cases based on clinical criteria
 
-🔗 **[More details](./STARDUST-CaseSelector/README.md)**
+🔗 **[More details](./STARDUST_CaseSelector/README.md)**
 
 ---
 
