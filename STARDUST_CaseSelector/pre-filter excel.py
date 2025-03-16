@@ -93,15 +93,18 @@ df['PTV_Radius'] = 10*(3 * df['TargetVolume'] / (4 * np.pi)) ** (1/3)
 df['GTV_Radius'] = 10*(3 * df['GTV-Volume'] / (4 * np.pi)) ** (1/3)
 df['Radius_Difference_mm'] = (df['PTV_Radius'] - df['GTV_Radius']).round(2)
 # **Filter anwenden**
-df = df[(df["PTV_Percentage_Larger"] <= 1000) & 
-        (df["PTV_Percentage_Larger"] >= 0) & 
-        (df["Radius_Difference_mm"] <= 14)]
+#df = df[(df["PTV_Percentage_Larger"] <= 1000) & 
+ #       (df["PTV_Percentage_Larger"] >= 0) & 
+  #      (df["Radius_Difference_mm"] <= 14)]
+df = df[
+        (df["PTV_Percentage_Larger"] >= 0)]
 df = df[~df["GTV"].astype(str).str.contains("prä|op", case=False, na=False)]
-df = df[df["GTV_Radius"] <= 25]
-df = df[df["Fx"] > 3]
-df = df[~df["TargetID"].astype(str).str.contains("sbl|sba|prost|sb|loge", case=False, na=False)]
-df = df[~df["GTV"].astype(str).str.contains("sbl|sba|prost|sb|loge", case=False, na=False)]
-df = df[df["GTV#>10GyAndInPTV"] == 1]
+df = df[df["GTV_Radius"] > 20]
+df = df[(df["Fx"] > 4)&(df["Fx"] < 25)]
+df = df[~df["TargetID"].astype(str).str.contains("sbl|sba|prost|sb|loge|hals|hno|neurocranium|wbrt|ganzhirn|anal|vulva|rectum|rectum|anus", case=False, na=False)]
+df = df[~df["GTV"].astype(str).str.contains("sbl|sba|prost|sb|loge|hals|hno|neurocranium|wbrt|ganzhirn|anal|vulva|rectum|rectum|anus", case=False, na=False)]
+df = df[~df["PlanID"].astype(str).str.contains("sbl|sba|prost|sb|loge|hals|hno|neurocranium|wbrt|ganzhirn|anal|vulva|rectum|rectum|anus", case=False, na=False)]
+#df = df[df["GTV#>10GyAndInPTV"] == 1]
 df = df[df["Patient-ID"].astype(str).str.match(r"^\d")]
 
 # **Berechnung von TotalVolume**

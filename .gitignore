@@ -5,6 +5,8 @@ obj/
 data/
 work_dir/
 .vs/
+debug_prompts/
+zCollage_mit_Schrift/
 
 # Large files
 STARDUST_MedSAM-MG/checkpoints/sam2_hiera_tiny.pt
