@@ -1,0 +1,25 @@
+Model,Organ,DSC,NSD
+MedSAM2_2D,Aorta,0.0,0.0
+MedSAM2_2D,Esophagus,0.0,0.0
+MedSAM2_2D,Gallbladder,0.0,0.0
+MedSAM2_2D,Inferior Vena Cava,0.0,0.0
+MedSAM2_2D,Left Adrenal Gland,0.0,0.0
+MedSAM2_2D,Left Kidney,0.0,0.0
+MedSAM2_2D,Liver,0.9808,0.9692
+MedSAM2_2D,Pancreas,0.0,0.0
+MedSAM2_2D,Right Adrenal Gland,0.0,0.0
+MedSAM2_2D,Right Kidney,0.0,0.0
+MedSAM2_2D,Spleen,0.0,0.0
+MedSAM2_2D,Stomach,0.0,0.0
+MedSAM2_3D,Aorta,0.0,0.0
+MedSAM2_3D,Esophagus,0.0,0.0
+MedSAM2_3D,Gallbladder,0.0,0.0
+MedSAM2_3D,Inferior Vena Cava,0.0,0.0
+MedSAM2_3D,Left Adrenal Gland,0.0,0.0
+MedSAM2_3D,Left Kidney,0.0,0.0
+MedSAM2_3D,Liver,0.9503,0.8623
+MedSAM2_3D,Pancreas,0.0,0.0
+MedSAM2_3D,Right Adrenal Gland,0.0,0.0
+MedSAM2_3D,Right Kidney,0.0,0.0
+MedSAM2_3D,Spleen,0.0,0.0
+MedSAM2_3D,Stomach,0.0,0.0

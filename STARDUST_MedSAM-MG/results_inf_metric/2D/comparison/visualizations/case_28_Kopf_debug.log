@@ -1,0 +1,67 @@
+Debug log for case_28_Kopf
+Ground truth file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/data/npz_files\case_28_Kopf.npz
+SAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\sam2\case_28_Kopf.npz
+MedSAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\medsam2\case_28_Kopf.npz
+
+Ground truth file keys: ['imgs', 'spacing', 'gts', 'labels']
+SAM2 file keys: ['1', 'GTV']
+MedSAM2 file keys: ['1', 'GTV']
+
+Processing slice 86
+  Ground truth unique labels: [0 1 2 3 4 5 7]
+  Label ID 1 in ground truth: 159 pixels
+  Label ID 2 in ground truth: 280 pixels
+  Label ID 3 in ground truth: 33046 pixels
+  Label ID 4 in ground truth: 22111 pixels
+  Label ID 5 in ground truth: 1378 pixels
+  Label ID 7 in ground truth: 427 pixels
+  GTV in SAM2: 1073 pixels assigned
+  GTV in MedSAM2: 152 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_28_Kopf_slice86.png
+
+Processing slice 92
+  Ground truth unique labels: [ 0  1  2  3  4  5  6  7  9 13]
+  Label ID 1 in ground truth: 457 pixels
+  Label ID 2 in ground truth: 264 pixels
+  Label ID 3 in ground truth: 33248 pixels
+  Label ID 4 in ground truth: 22907 pixels
+  Label ID 5 in ground truth: 1298 pixels
+  Label ID 6 in ground truth: 265 pixels
+  Label ID 7 in ground truth: 718 pixels
+  Label ID 9 in ground truth: 359 pixels
+  Label ID 13 in ground truth: 51 pixels
+  GTV in SAM2: 885 pixels assigned
+  GTV in MedSAM2: 461 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_28_Kopf_slice92.png
+
+Processing slice 98
+  Ground truth unique labels: [ 0  1  2  3  4  5  6  7  9 10 11 13]
+  Label ID 1 in ground truth: 928 pixels
+  Label ID 2 in ground truth: 357 pixels
+  Label ID 3 in ground truth: 31142 pixels
+  Label ID 4 in ground truth: 23833 pixels
+  Label ID 5 in ground truth: 1361 pixels
+  Label ID 6 in ground truth: 712 pixels
+  Label ID 7 in ground truth: 695 pixels
+  Label ID 9 in ground truth: 55 pixels
+  Label ID 10 in ground truth: 324 pixels
+  Label ID 11 in ground truth: 32 pixels
+  Label ID 13 in ground truth: 23 pixels
+  GTV in SAM2: 1082 pixels assigned
+  GTV in MedSAM2: 920 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_28_Kopf_slice98.png
+
+Processing slice 104
+  Ground truth unique labels: [ 0  1  2  3  4  6  7 10 11 12]
+  Label ID 1 in ground truth: 662 pixels
+  Label ID 2 in ground truth: 463 pixels
+  Label ID 3 in ground truth: 29009 pixels
+  Label ID 4 in ground truth: 27586 pixels
+  Label ID 6 in ground truth: 778 pixels
+  Label ID 7 in ground truth: 483 pixels
+  Label ID 10 in ground truth: 58 pixels
+  Label ID 11 in ground truth: 18 pixels
+  Label ID 12 in ground truth: 60 pixels
+  GTV in SAM2: 645 pixels assigned
+  GTV in MedSAM2: 674 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_28_Kopf_slice104.png

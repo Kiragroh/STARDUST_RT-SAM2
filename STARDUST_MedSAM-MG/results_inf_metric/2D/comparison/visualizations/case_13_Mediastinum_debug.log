@@ -1,0 +1,60 @@
+Debug log for case_13_Mediastinum
+Ground truth file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/data/npz_files\case_13_Mediastinum.npz
+SAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\sam2\case_13_Mediastinum.npz
+MedSAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\medsam2\case_13_Mediastinum.npz
+
+Ground truth file keys: ['imgs', 'spacing', 'gts', 'labels']
+SAM2 file keys: ['1', 'GTV']
+MedSAM2 file keys: ['1', 'GTV']
+
+Processing slice 58
+  Ground truth unique labels: [0 1 2 3 5 6 8 9]
+  Label ID 1 in ground truth: 390 pixels
+  Label ID 2 in ground truth: 947 pixels
+  Label ID 3 in ground truth: 23012 pixels
+  Label ID 5 in ground truth: 9460 pixels
+  Label ID 6 in ground truth: 8640 pixels
+  Label ID 8 in ground truth: 230 pixels
+  Label ID 9 in ground truth: 95 pixels
+  GTV in SAM2: 1156 pixels assigned
+  GTV in MedSAM2: 372 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_13_Mediastinum_slice58.png
+
+Processing slice 60
+  Ground truth unique labels: [0 1 2 3 5 6 8 9]
+  Label ID 1 in ground truth: 620 pixels
+  Label ID 2 in ground truth: 1043 pixels
+  Label ID 3 in ground truth: 22750 pixels
+  Label ID 5 in ground truth: 8912 pixels
+  Label ID 6 in ground truth: 8570 pixels
+  Label ID 8 in ground truth: 242 pixels
+  Label ID 9 in ground truth: 143 pixels
+  GTV in SAM2: 1032 pixels assigned
+  GTV in MedSAM2: 616 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_13_Mediastinum_slice60.png
+
+Processing slice 62
+  Ground truth unique labels: [0 1 2 3 5 6 8 9]
+  Label ID 1 in ground truth: 599 pixels
+  Label ID 2 in ground truth: 1139 pixels
+  Label ID 3 in ground truth: 23029 pixels
+  Label ID 5 in ground truth: 8464 pixels
+  Label ID 6 in ground truth: 8266 pixels
+  Label ID 8 in ground truth: 221 pixels
+  Label ID 9 in ground truth: 152 pixels
+  GTV in SAM2: 913 pixels assigned
+  GTV in MedSAM2: 617 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_13_Mediastinum_slice62.png
+
+Processing slice 64
+  Ground truth unique labels: [0 1 2 3 5 6 8 9]
+  Label ID 1 in ground truth: 557 pixels
+  Label ID 2 in ground truth: 962 pixels
+  Label ID 3 in ground truth: 23153 pixels
+  Label ID 5 in ground truth: 8183 pixels
+  Label ID 6 in ground truth: 8290 pixels
+  Label ID 8 in ground truth: 211 pixels
+  Label ID 9 in ground truth: 158 pixels
+  GTV in SAM2: 1142 pixels assigned
+  GTV in MedSAM2: 536 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_13_Mediastinum_slice64.png

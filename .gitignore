@@ -1,0 +1,11 @@
+# Folders to exclude
+debug/
+zOld/
+obj/
+data/
+work_dir/
+.vs/
+
+# Large files
+STARDUST_MedSAM-MG/checkpoints/sam2_hiera_tiny.pt
+STARDUST_MedSAM-MG/checkpoints/sam2.1_hiera_tiny.pt

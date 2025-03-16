@@ -1,0 +1,42 @@
+Debug log for case_71_Becken
+Ground truth file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/data/npz_files\case_71_Becken.npz
+SAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\sam2\case_71_Becken.npz
+MedSAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\medsam2\case_71_Becken.npz
+
+Ground truth file keys: ['imgs', 'spacing', 'gts', 'labels']
+SAM2 file keys: ['1', 'GTV']
+MedSAM2 file keys: ['1', 'GTV']
+
+Processing slice 55
+  Ground truth unique labels: [0 1 2 5]
+  Label ID 1 in ground truth: 117 pixels
+  Label ID 2 in ground truth: 1788 pixels
+  Label ID 5 in ground truth: 956 pixels
+  GTV in SAM2: 2197 pixels assigned
+  GTV in MedSAM2: 120 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_71_Becken_slice55.png
+
+Processing slice 58
+  Ground truth unique labels: [0 1 2 5]
+  Label ID 1 in ground truth: 740 pixels
+  Label ID 2 in ground truth: 2130 pixels
+  Label ID 5 in ground truth: 692 pixels
+  GTV in SAM2: 1475 pixels assigned
+  GTV in MedSAM2: 700 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_71_Becken_slice58.png
+
+Processing slice 61
+  Ground truth unique labels: [0 1 2]
+  Label ID 1 in ground truth: 1034 pixels
+  Label ID 2 in ground truth: 2250 pixels
+  GTV in SAM2: 1890 pixels assigned
+  GTV in MedSAM2: 1040 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_71_Becken_slice61.png
+
+Processing slice 64
+  Ground truth unique labels: [0 1 2]
+  Label ID 1 in ground truth: 622 pixels
+  Label ID 2 in ground truth: 2401 pixels
+  GTV in SAM2: 2176 pixels assigned
+  GTV in MedSAM2: 595 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_71_Becken_slice64.png

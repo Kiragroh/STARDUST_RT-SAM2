@@ -1,0 +1,48 @@
+Debug log for case_35_Becken
+Ground truth file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/data/npz_files\case_35_Becken.npz
+SAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\sam2\case_35_Becken.npz
+MedSAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\medsam2\case_35_Becken.npz
+
+Ground truth file keys: ['imgs', 'spacing', 'gts', 'labels']
+SAM2 file keys: ['1', 'GTV']
+MedSAM2 file keys: ['1', 'GTV']
+
+Processing slice 84
+  Ground truth unique labels: [0 1 2 3 7]
+  Label ID 1 in ground truth: 256 pixels
+  Label ID 2 in ground truth: 2000 pixels
+  Label ID 3 in ground truth: 53747 pixels
+  Label ID 7 in ground truth: 343 pixels
+  GTV in SAM2: 2254 pixels assigned
+  GTV in MedSAM2: 232 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_35_Becken_slice84.png
+
+Processing slice 87
+  Ground truth unique labels: [0 1 2 3 7]
+  Label ID 1 in ground truth: 1055 pixels
+  Label ID 2 in ground truth: 1660 pixels
+  Label ID 3 in ground truth: 53161 pixels
+  Label ID 7 in ground truth: 301 pixels
+  GTV in SAM2: 1620 pixels assigned
+  GTV in MedSAM2: 1063 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_35_Becken_slice87.png
+
+Processing slice 90
+  Ground truth unique labels: [0 1 2 3 7]
+  Label ID 1 in ground truth: 979 pixels
+  Label ID 2 in ground truth: 1870 pixels
+  Label ID 3 in ground truth: 53148 pixels
+  Label ID 7 in ground truth: 412 pixels
+  GTV in SAM2: 1276 pixels assigned
+  GTV in MedSAM2: 989 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_35_Becken_slice90.png
+
+Processing slice 93
+  Ground truth unique labels: [0 1 2 3 7]
+  Label ID 1 in ground truth: 1225 pixels
+  Label ID 2 in ground truth: 1738 pixels
+  Label ID 3 in ground truth: 53503 pixels
+  Label ID 7 in ground truth: 300 pixels
+  GTV in SAM2: 2472 pixels assigned
+  GTV in MedSAM2: 1201 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_35_Becken_slice93.png

@@ -1,0 +1,45 @@
+Debug log for case_1_Kopf
+Ground truth file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/data/npz_files\case_1_Kopf.npz
+SAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\sam2\case_1_Kopf.npz
+MedSAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\medsam2\case_1_Kopf.npz
+
+Ground truth file keys: ['imgs', 'spacing', 'gts', 'labels']
+SAM2 file keys: ['1', 'GTV']
+MedSAM2 file keys: ['1', 'GTV']
+
+Processing slice 110
+  Ground truth unique labels: [0 1 2 3 5]
+  Label ID 1 in ground truth: 115 pixels
+  Label ID 2 in ground truth: 640 pixels
+  Label ID 3 in ground truth: 55472 pixels
+  Label ID 5 in ground truth: 149 pixels
+  GTV in SAM2: 42746 pixels assigned
+  GTV in MedSAM2: 124 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_1_Kopf_slice110.png
+
+Processing slice 116
+  Ground truth unique labels: [0 1 2 3]
+  Label ID 1 in ground truth: 660 pixels
+  Label ID 2 in ground truth: 466 pixels
+  Label ID 3 in ground truth: 51891 pixels
+  GTV in SAM2: 7539 pixels assigned
+  GTV in MedSAM2: 650 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_1_Kopf_slice116.png
+
+Processing slice 122
+  Ground truth unique labels: [0 1 2 3]
+  Label ID 1 in ground truth: 676 pixels
+  Label ID 2 in ground truth: 477 pixels
+  Label ID 3 in ground truth: 48344 pixels
+  GTV in SAM2: 1243 pixels assigned
+  GTV in MedSAM2: 641 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_1_Kopf_slice122.png
+
+Processing slice 128
+  Ground truth unique labels: [0 1 2 3]
+  Label ID 1 in ground truth: 513 pixels
+  Label ID 2 in ground truth: 422 pixels
+  Label ID 3 in ground truth: 47595 pixels
+  GTV in SAM2: 1310 pixels assigned
+  GTV in MedSAM2: 527 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_1_Kopf_slice128.png

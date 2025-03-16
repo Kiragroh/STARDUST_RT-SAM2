@@ -1,0 +1,46 @@
+Debug log for case_81_Abdomen
+Ground truth file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/data/npz_files\case_81_Abdomen.npz
+SAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\sam2\case_81_Abdomen.npz
+MedSAM2 file: C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_seg\2D\medsam2\case_81_Abdomen.npz
+
+Ground truth file keys: ['imgs', 'spacing', 'gts', 'labels']
+SAM2 file keys: ['1', 'GTV']
+MedSAM2 file keys: ['1', 'GTV']
+
+Processing slice 62
+  Ground truth unique labels: [0 1 2 3]
+  Label ID 1 in ground truth: 71 pixels
+  Label ID 2 in ground truth: 1113 pixels
+  Label ID 3 in ground truth: 17567 pixels
+  GTV in SAM2: 2259 pixels assigned
+  GTV in MedSAM2: 128 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_81_Abdomen_slice62.png
+
+Processing slice 67
+  Ground truth unique labels: [0 1 2 3]
+  Label ID 1 in ground truth: 1046 pixels
+  Label ID 2 in ground truth: 1954 pixels
+  Label ID 3 in ground truth: 18967 pixels
+  GTV in SAM2: 1579 pixels assigned
+  GTV in MedSAM2: 1016 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_81_Abdomen_slice67.png
+
+Processing slice 72
+  Ground truth unique labels: [0 1 2 3 7]
+  Label ID 1 in ground truth: 1890 pixels
+  Label ID 2 in ground truth: 1686 pixels
+  Label ID 3 in ground truth: 20661 pixels
+  Label ID 7 in ground truth: 151 pixels
+  GTV in SAM2: 2116 pixels assigned
+  GTV in MedSAM2: 1907 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_81_Abdomen_slice72.png
+
+Processing slice 77
+  Ground truth unique labels: [0 1 2 3 7]
+  Label ID 1 in ground truth: 1006 pixels
+  Label ID 2 in ground truth: 1729 pixels
+  Label ID 3 in ground truth: 25239 pixels
+  Label ID 7 in ground truth: 192 pixels
+  GTV in SAM2: 1032 pixels assigned
+  GTV in MedSAM2: 978 pixels assigned
+Saved visualization to C:/Users/MG/Desktop/STARDUST2/MedSAM-MedSAM2_MG2/results_inf_metric\2D\comparison\visualizations\case_81_Abdomen_slice77.png

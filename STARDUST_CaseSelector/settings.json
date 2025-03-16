@@ -1,0 +1,8 @@
+{
+    "input_excel": "",
+    "output_csv": "accepted_images.csv",
+    "images_folder": "",
+    "filter_mode": "include",
+    "selected_labels": [],
+    "selected_labels2": []
+}
