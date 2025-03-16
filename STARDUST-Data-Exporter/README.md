@@ -65,23 +65,6 @@ This module is part of the **STARDUST** ecosystem:
 🔹 **STARDUST-Data-Exporter** → Converts selected cases into training-ready datasets 🔄  
 🔹 **STARDUST-MedSAM2** → Uses the processed datasets for AI-powered tumor segmentation  
 
-## 🔮 Future Improvements
-
-- ✅ **Automated AI-based structure validation before export**  
-- 🔄 **Integration of real-time approval tracking within Eclipse**  
-- 📊 **Enhanced logging for clinical review**  
-
-## 📚 Citation
-
-If you use STARDUST-Data-Exporter in your research, please cite:
-
-```
-@article{STARDUST-Data-Exporter,
-  title={STARDUST: AI-Powered Tumor Segmentation and Structured Data Export},
-  author={Your Name},
-  journal={Your Journal},
-  year={2025}
-}
 ```
 
 ## 📝 License

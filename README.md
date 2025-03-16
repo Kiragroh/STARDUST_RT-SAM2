@@ -58,10 +58,10 @@ A structured data export pipeline that **converts the selected cases from TPS in
 
 ## 📚 Citation
 
-If you use STARDUST in your research, please cite:
+If you use STARDUST in your research, please cite (TODO):
 ```
 @article{STARDUST,
-  title={STARDUST: AI-Powered Tumor Segmentation and Clinical Data Processing},
+  title={STARDUST},
   author={Your Name},
   journal={Your Journal},
   year={2025}

@@ -73,17 +73,6 @@ The STARDUST-Case-Selector is part of the **STARDUST** ecosystem:
 - 📊 **Automatic quality assessment** for segmentation consistency
 - 🚀 **Integration with TPS for real-time case selection**
 
-## 📚 Citation
-
-If you use STARDUST-Case-Selector in your research, please cite:
-
-```
-@article{STARDUST-Case-Selector,
-  title={STARDUST: AI-Powered Tumor Segmentation and Case Selection},
-  author={Your Name},
-  journal={Your Journal},
-  year={2025}
-}
 ```
 
 ## 📝 License

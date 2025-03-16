@@ -93,21 +93,8 @@ This module is part of the **STARDUST** ecosystem:
 
 ## 🔮 Future Improvements
 
-- 📈 **Enhanced HU analysis** for tumor texture evaluation.
-- 📊 **Automated dose distribution overlay**.
-- 🔄 **Direct integration with STARDUST-Case-Selector for real-time filtering**.
+- 🔄 **Direct integration with Eclipse TPS via custom DICOMnode**.
 
-## 📚 Citation
-
-If you use STARDUST-TPS-Mining in your research, please cite:
-
-```
-@article{STARDUST-TPS-Mining,
-  title={STARDUST: AI-Powered Tumor Segmentation and TPS Data Extraction},
-  author={Your Name},
-  journal={Your Journal},
-  year={2025}
-}
 ```
 
 ## 📝 License
