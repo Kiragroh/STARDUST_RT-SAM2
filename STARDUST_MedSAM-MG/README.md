@@ -38,7 +38,7 @@ STARDUST-MedSAM2 builds upon this capability, leveraging a decade’s worth of r
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/STARDUST-MedSAM2.git
+git clone https://github.com/Kiragroh/STARDUST-MedSAM2.git
 cd STARDUST-MedSAM2
 
 # Install dependencies
