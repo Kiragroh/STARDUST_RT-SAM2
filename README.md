@@ -1,5 +1,7 @@
 # 🌟 STARDUST: AI-Powered Segmentation & Clinical Data Processing 🌟
 
+![STARDUST Banner](assets/bannerCollage.png)
+
 ## 🔍 Overview
 
 **STARDUST** (Segmentation of Tumors via AI-powered Radiotherapy Database Utilization using AI Technology) is a comprehensive framework designed to streamline tumor segmentation, data extraction from treatment planning systems (TPS), and dataset preparation for AI training. The project consists of multiple components, each targeting a specific aspect of medical image processing and clinical data handling.
@@ -13,7 +15,7 @@ The STARDUST repository consists of the following core submodules:
 ### 1️⃣ **STARDUST-MedSAM2**
 A customized version of the **Segment Anything Model 2 (SAM2)** adapted for tumor segmentation in radiotherapy planning. This module includes fine-tuning methods, evaluation tools, and a GUI for interactive segmentation. 
 
-🔗 **[More details](./STARDUST-MedSAM2/README.md)**
+🔗 **[More details](./STARDUST-MedSAM-MG/README.md)**
 
 ---
 
@@ -33,7 +35,7 @@ A **Python GUI tool** to review extracted cases and determine their suitability 
 - **Selection and labeling** of cases for training
 - **Advanced filtering** to refine TPS-mined cases based on clinical criteria
 
-🔗 **[More details](./STARDUST-Case-Selector/README.md)**
+🔗 **[More details](./STARDUST-CaseSelector/README.md)**
 
 ---
 
