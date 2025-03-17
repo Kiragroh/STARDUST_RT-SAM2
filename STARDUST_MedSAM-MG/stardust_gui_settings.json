@@ -14,7 +14,7 @@
     "visualization_slices": "",
     "visualization_rotation": 0,
     "run_sam2_2d": true,
-    "run_medsam2_2d": true,
+    "run_medsam2_2d": false,
     "run_sam2_3d": false,
     "run_medsam2_3d": false,
     "label_names": {

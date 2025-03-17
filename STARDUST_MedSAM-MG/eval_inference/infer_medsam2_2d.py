@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from os.path import join, exists
 from os import makedirs, listdir
 from tqdm import tqdm
@@ -13,17 +14,59 @@ from tqdm import tqdm
 import argparse
 import json
 import logging
-
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]  # Ausgabe auf Konsole
+)
 from sam2.build_sam import build_sam2
 from sam2.utils.transforms import SAM2Transforms
 
 from torch import multiprocessing as mp
+
+# Import der neuen Prompt-Utilities
+import sys
+# Verwende einen absoluten Pfad anstelle eines relativen Pfads
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from prompt_utils import (
+    get_bbox, generate_negative_masks, generate_random_points, 
+    generate_prompts, save_prompt_debug_visualizations
+)
 
 #%% set seeds
 torch.set_float32_matmul_precision('high')
 torch.manual_seed(2024)
 torch.cuda.manual_seed(2024)
 np.random.seed(2024)
+
+def medsam_point_inference(model, features, points, labels, H, W, device):
+    img_embed, high_res_features = features["image_embed"], features["high_res_feats"]
+    
+    points_torch = torch.as_tensor(points, dtype=torch.float32, device=device)[None, ...]
+    labels_torch = torch.as_tensor(labels, dtype=torch.int, device=device)[None, ...]
+    
+    with torch.no_grad():
+        sparse_embeddings, dense_embeddings = model.sam2_model.sam_prompt_encoder(
+            points=(points_torch, labels_torch),
+            boxes=None,
+            masks=None,
+        )
+        
+        mask_logits, _, _, _ = model.sam2_model.sam_mask_decoder(
+            image_embeddings=img_embed,
+            image_pe=model.sam2_model.sam_prompt_encoder.get_dense_pe(),
+            sparse_prompt_embeddings=sparse_embeddings,
+            dense_prompt_embeddings=dense_embeddings,
+            multimask_output=False,
+            repeat_image=False,
+            high_res_features=high_res_features,
+        )
+    
+    mask_logits = mask_logits[0, 0]
+    mask_1024 = (mask_logits > 0).cpu().numpy()
+    mask_original = cv2.resize(mask_1024.astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST)
+    
+    return mask_original
 
 # Laden der Label-Namen aus der GUI-Konfiguration
 def load_label_names():
@@ -64,7 +107,7 @@ if label_names is None:
 # Sicherstellen, dass Label 1 immer als GTV bezeichnet wird
 if 1 not in label_names:
     label_names[1] = 'GTV'
-    print("Label 1 wurde explizit als GTV gesetzt")
+    #print("Label 1 wurde explizit als GTV gesetzt")
 
 print(f"Geladene Label-Namen: {label_names}")
 
@@ -291,7 +334,7 @@ medsam2_checkpoint = args.medsam2_checkpoint
 num_workers = args.num_workers
 
 sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device, mode="eval", apply_postprocessing=True)
-medsam2_checkpoint = torch.load(medsam2_checkpoint, map_location="cpu")
+medsam2_checkpoint = torch.load(medsam2_checkpoint, map_location="cpu", weights_only=False)
 medsam_model = MedSAM2(model=sam2_model)
 medsam_model.load_state_dict(medsam2_checkpoint["model_state_dict"], strict=True)
 medsam_model.eval()
@@ -319,7 +362,7 @@ def save_npz_and_nii(pred_save_dir, name, segs_dict, label_ids, img_3D=None, spa
     # Globale label_names verwenden, die am Anfang des Skripts geladen wurden
     global label_names
     
-    print(f"In save_npz_and_nii: label_names = {label_names}")
+    #print(f"In save_npz_and_nii: label_names = {label_names}")
     
     # Speicherformat anpassen, um Kompatibilität zu gewährleisten
     save_dict = {}
@@ -375,106 +418,174 @@ def main(name):
     name_prefix = name.split('.')[0]
     try:
         data = np.load(join(data_root, name), allow_pickle=True)
-        # Passe die Schlüssel an die vorhandenen Daten an
-        img_3D = data["imgs"]  # Anstelle von "image" verwenden wir "imgs"
-        if "spacing" in data:
-            spacing = data["spacing"]
-        else:
-            spacing = None
-        # Lade die Segmentierungen aus dem 'gts'-Schlüssel statt 'label'
+        img_3D = data["imgs"]
         gt_3D = data["gts"]
+        spacing = data.get("spacing", None)
 
-        # Setze die Label IDs aus den Argumenten oder verwende alle vorhandenen Labels
+        # Bestimme die zu segmentierenden Label-IDs
         if args.label:
             label_ids = [int(i) for i in args.label.split(',')]
         else:
-            # Wenn keine Labels angegeben wurden, verwende alle vorhandenen (außer 0 = Hintergrund)
             all_labels = np.unique(gt_3D)
             label_ids = [int(label) for label in all_labels if label > 0]
 
+        # Lade Labelnamen oder erstelle Fallback
+        label_names_dict = load_label_names() or {}
+        for label_id in label_ids:
+            label_names_dict[label_id] = label_names_dict.get(label_id, f"Label_{label_id}")
+
+        # Initialisiere Dictionaries
+        debug_prompts_dict = {}
         segs_dict = {}
+
         for label_id in label_ids:
             segs_3d_temp = np.zeros_like(img_3D, dtype=np.uint8)
             marker_data_id = (gt_3D == label_id).astype(np.uint8)
-            marker_zids, _, _ = np.where(marker_data_id > 0)
-            
+            marker_zids = np.sort(np.unique(np.where(marker_data_id > 0)[0]))
+
             if len(marker_zids) == 0:
                 logging.warning(f"No voxels with label {label_id} found in {name}. Skipping.")
                 continue
-                
-            marker_zids = np.sort(np.unique(marker_zids))
-            bbox_dict = {} # key: z_index, value: bbox
-            for z in marker_zids:
-                z_box = get_bbox(marker_data_id[z, :, :])
-                bbox_dict[z] = z_box
-                
-            # find largest bbox in bbox_dict
-            bbox_areas = [np.prod(bbox_dict[z][2:] - bbox_dict[z][:2]) for z in bbox_dict.keys()]
-            z_max_area = list(bbox_dict.keys())[np.argmax(bbox_areas)]
-            z_min = min(bbox_dict.keys())
-            z_max = max(bbox_dict.keys())
-            z_max_area_bbox = mid_slice_bbox_2d = bbox_dict[z_max_area]
 
-            z_middle = int((z_max - z_min)/2 + z_min)
-    
-            z_max = min(z_max+1, img_3D.shape[0])
-            for z in range(z_middle, z_max):
-                img_2d = img_3D[z, :, :]
-                if len(img_2d.shape) == 2:
-                    img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1)
-                else:
-                    img_3c = img_2d
+            # Erstelle Label-Dictionary für alle Labels
+            label_dict = {f"{l_id}_{label_names_dict[l_id]}": (gt_3D == l_id).astype(np.uint8) for l_id in label_ids}
+
+            if args.prompt_type == "box":
+                # Bestehende Box-Logik bleibt unverändert
+                bbox_dict = {z: get_bbox(marker_data_id[z], bbox_shift=args.bbox_shift) for z in marker_zids}
+                if args.debug_mode:
+                    debug_prompts_dict.update({z: {"box": bbox_dict[z]} for z in marker_zids})
+                bbox_areas = [np.prod(bbox_dict[z][2:] - bbox_dict[z][:2]) for z in bbox_dict.keys()]
+                z_max_area = list(bbox_dict.keys())[np.argmax(bbox_areas)]
+                z_min, z_max = min(bbox_dict.keys()), max(bbox_dict.keys())
+                mid_slice_bbox_2d = bbox_dict[z_max_area]
+                z_middle = int((z_max - z_min) / 2 + z_min)
+                z_max = min(z_max + 1, img_3D.shape[0])
+
+                for z in range(z_middle, z_max):
+                    img_2d = img_3D[z]
+                    img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1) if len(img_2d.shape) == 2 else img_2d
+                    H, W, _ = img_3c.shape
+                    img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
+                    with torch.no_grad():
+                        _features = medsam_model._image_encoder(img_1024_tensor)
+                    box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024 if z == z_middle else get_bbox(
+                        cv2.resize(segs_3d_temp[z - 1], (1024, 1024), interpolation=cv2.INTER_NEAREST)
+                    ) if np.max(segs_3d_temp[z - 1]) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                    img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
+                    segs_3d_temp[z, img_2d_seg > 0] = 1
+
+                z_min = max(-1, z_min - 1)
+                for z in range(z_middle - 1, z_min, -1):
+                    img_2d = img_3D[z]
+                    img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1) if len(img_2d.shape) == 2 else img_2d
+                    H, W, _ = img_3c.shape
+                    img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
+                    with torch.no_grad():
+                        _features = medsam_model._image_encoder(img_1024_tensor)
+                    box_1024 = get_bbox(cv2.resize(segs_3d_temp[z + 1], (1024, 1024), interpolation=cv2.INTER_NEAREST)) if np.max(
+                        segs_3d_temp[z + 1]) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                    img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
+                    segs_3d_temp[z, img_2d_seg > 0] = 1
+
+            elif args.prompt_type == "point":
+                # Bestimme den mittleren Slice
+                z_min, z_max = min(marker_zids), max(marker_zids)
+                z_middle = int((z_max - z_min) / 2 + z_min)
+
+                # Generiere Punkt-Prompts für den mittleren Slice
+                gt_mask_middle = marker_data_id[z_middle]
+                slice_label_dict = {name: mask[z_middle] for name, mask in label_dict.items()}
+                img_2d = img_3D[z_middle]
+                prompts = generate_prompts(
+                    gt_mask_middle,
+                    slice_label_dict,
+                    image_slice=img_2d,
+                    prompt_type='point',
+                    num_pos_points=args.num_pos_points,
+                    num_neg_points=args.num_neg_points,
+                    min_dist_from_edge=args.min_dist_from_edge,
+                    threshold=50
+                )
+
+                if 'points' not in prompts or len(prompts['points']) == 0:
+                    logging.warning(f"Keine Prompts für den mittleren Slice {z_middle} generiert. Überspringe.")
+                    continue
+
+                logging.info(f"Generierte Punkte: {len(prompts['points'])}")
+                logging.info(f"Positive Punkte: {np.sum(prompts['labels'] == 1)}")
+                logging.info(f"Negative Punkte: {np.sum(prompts['labels'] == 0)}")
+
+                # Segmentierung des mittleren Slices mit Punkt-Prompts
+                img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1) if len(img_2d.shape) == 2 else img_2d
                 H, W, _ = img_3c.shape
-                
-                # convert the shape to (3, H, W)
                 img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
-                # get the image embedding
                 with torch.no_grad():
-                    _features = medsam_model._image_encoder(img_1024_tensor) # (1, 256, 64, 64)
-                if z == z_middle:
-                    box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
-                else:
-                    pre_seg = segs_3d_temp[z-1, :, :]
+                    _features = medsam_model._image_encoder(img_1024_tensor)
+                points_1024 = prompts['points'] / np.array([W, H]) * 1024
+                labels = prompts['labels']
+                img_2d_seg = medsam_point_inference(medsam_model, _features, points_1024, labels, H, W, device)
+                segs_3d_temp[z_middle, img_2d_seg > 0] = 1
+
+                # Speichere Debug-Informationen für den mittleren Slice
+                if args.debug_mode:
+                    debug_prompts_dict[z_middle] = {"points": prompts['points'], "labels": labels}
+                    #logging.info(f"Debug prompts für z_middle {z_middle}: {debug_prompts_dict[z_middle]}")
+
+                # Erstelle Bounding Box aus der Segmentierung des mittleren Slices
+                mid_slice_bbox_2d = get_bbox(segs_3d_temp[z_middle], bbox_shift=args.bbox_shift) if np.max(
+                    segs_3d_temp[z_middle]) > 0 else get_bbox(gt_mask_middle, bbox_shift=args.bbox_shift)
+
+                # Propagation nach oben
+                z_max = min(z_max + 1, img_3D.shape[0])
+                for z in range(z_middle + 1, z_max):
+                    img_2d = img_3D[z]
+                    img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1) if len(img_2d.shape) == 2 else img_2d
+                    H, W, _ = img_3c.shape
+                    img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
+                    with torch.no_grad():
+                        _features = medsam_model._image_encoder(img_1024_tensor)
+                    pre_seg = segs_3d_temp[z - 1]
                     pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
-                    if np.max(pre_seg1024) > 0:
-                        box_1024 = get_bbox(pre_seg1024)
-                    else:
-                        box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
-                img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None,:], H, W)
-                segs_3d_temp[z, img_2d_seg>0] = 1
-        
-            # infer from middle slice to the z_min
-            z_min = max(-1, z_min-1)
-            for z in range(z_middle-1, z_min, -1):
-                img_2d = img_3D[z, :, :]
-                if len(img_2d.shape) == 2:
-                    img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1)
-                else:
-                    img_3c = img_2d
-                H, W, _ = img_3c.shape
+                    box_1024 = get_bbox(pre_seg1024) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                    used_box = box_1024 / 1024 * np.array([W, H, W, H]) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d
+                    if args.debug_mode:
+                        debug_prompts_dict[z] = {"box": used_box}
+                    img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
+                    segs_3d_temp[z, img_2d_seg > 0] = 1
 
-                img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
-                # get the image embedding
-                with torch.no_grad():
-                    _features = medsam_model._image_encoder(img_1024_tensor) # (1, 256, 64, 64)
+                # Propagation nach unten
+                z_min = max(-1, z_min - 1)
+                for z in range(z_middle - 1, z_min, -1):
+                    img_2d = img_3D[z]
+                    img_3c = np.repeat(img_2d[:, :, None], 3, axis=-1) if len(img_2d.shape) == 2 else img_2d
+                    H, W, _ = img_3c.shape
+                    img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
+                    with torch.no_grad():
+                        _features = medsam_model._image_encoder(img_1024_tensor)
+                    pre_seg = segs_3d_temp[z + 1]
+                    pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
+                    box_1024 = get_bbox(pre_seg1024) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                    used_box = box_1024 / 1024 * np.array([W, H, W, H]) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d
+                    if args.debug_mode:
+                        debug_prompts_dict[z] = {"box": used_box}
+                    img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
+                    segs_3d_temp[z, img_2d_seg > 0] = 1
 
-                pre_seg = segs_3d_temp[z+1, :, :]
-                pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
-                if np.max(pre_seg1024) > 0:
-                    box_1024 = get_bbox(pre_seg1024)
-                else:
-                    box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
-                img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None,:], H, W)
-                segs_3d_temp[z, img_2d_seg>0] = 1
-            segs_dict[label_id] = segs_3d_temp.copy() ## save the segmentation result in one-hot format
+            segs_dict[label_id] = segs_3d_temp.copy()
 
-        if segs_dict:  # Nur speichern, wenn Segmentierungen gefunden wurden
-            save_npz_and_nii(pred_save_dir, name, segs_dict, list(segs_dict.keys()), img_3D=data['imgs'], spacing=spacing, visualize=visualize or save_nii, save_nii=save_nii, include_ct=include_ct)
+        # Speichere Ergebnisse
+        if segs_dict:
+            save_npz_and_nii(pred_save_dir, name, segs_dict, label_ids, img_3D, spacing, visualize, save_nii, include_ct)
+            if args.debug_mode and debug_prompts_dict:
+                debug_dir = join(pred_save_dir, "debug_prompts")
+                makedirs(debug_dir, exist_ok=True)
+                save_prompt_debug_visualizations(img_3D, label_dict, debug_prompts_dict, debug_dir, name_prefix, segs_dict, middle_slice=z_middle)
         else:
-            logging.warning(f"No segmentations found for {name} with the requested labels. Skipping file.")
-            
+            logging.warning(f"No segmentations found for {name} with requested labels.")
+
     except Exception as e:
-        logging.error(f"Error processing {name}: {str(e)}")
+        logging.error(f"Error processing {name}: {e}")
         return None
 
 if __name__ == '__main__':
