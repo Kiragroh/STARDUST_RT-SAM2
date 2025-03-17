@@ -1,6 +1,6 @@
 # 🌟 STARDUST-MedSAM2 🌟
 
-![STARDUST-MedSam-MG Banner](assets/bannerCollage.png)
+<div align="center"> <img src="assets/bannerCollage.png" alt="Box Mode Example in STARDUST-MedSAM2" width="1400"/> </div>
 
 ## 🔍 Project Overview
 
@@ -22,7 +22,7 @@ In Box Mode, the user draws a rectangular box around the tumor on one slice of a
 **How It Looks:**
 Check out the following picture below. It shows 15 slices of a brain CT scan (Slices 144 to 161). The yellow box is the "ground truth" (the expert-drawn tumor area), and the red box is what the AI predicts and carries across slices. The light blue area inside the box is the AI’s guess at the tumor’s shape. Notice how the red box follows the yellow box closely as the tumor changes size and shape across slices—like from Slice 161 (small tumor) to Slice 162 (biggest tumor) and back to Slice 144 (small again). This shows how the AI uses one box to map the tumor in 3D.
 
-<div align="center"> <img src="assets/box.png" alt="Box Mode Example in STARDUST-MedSAM2" width="800"/> <p><strong>the following picture:</strong> Box Mode in action across 15 brain CT slices. Yellow box = expert outline, red box = AI’s propagated box, light blue = AI’s tumor prediction.</p> </div>
+<div align="center"> <img src="assets/box.png" alt="Box Mode Example in STARDUST-MedSAM2" width="1400"/> <p> Box Mode in action across 15 brain CT slices. Yellow box = expert outline, red box = AI’s propagated box, light blue = AI’s tumor prediction.</p> </div>
 
 ### 📍 Point Mode: Pointing at the Tumor
 In Point Mode, the user clicks a point inside the tumor (a "positive point") to say, "This is part of the tumor," and can add a point outside (a "negative point") to say, "This isn’t the tumor." The AI uses these hints to draw the tumor’s shape and extend it across the 3D scan.
@@ -30,7 +30,7 @@ In Point Mode, the user clicks a point inside the tumor (a "positive point") to 
 **How It Looks:**
 Look at the following picture below. It compares the vanilla SAM2 (left) and our fine-tuned STARDUST-MedSAM2 (right) across 9 slices of a chest CT scan (Slices 75 to 96). In Slice 85 (middle), you’ll see a purple cross (positive point, may be hard to see due to image anonymization but clearer in real scans) inside the tumor and a yellow star (negative point) outside. For STARDUST-MedSAM2 (right), the light blue tumor shape matches the green expert outline almost perfectly, showing it listens to the points well. The vanilla SAM2 (left) gets it wrong, making the tumor too big even with the negative point telling it to stop.
 
-<div align="center"> <img src="assets/point.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1200"/> <p><strong>the following picture:</strong> Point Mode comparison. Left = Vanilla SAM2, Right = STARDUST-MedSAM2. Green = expert outline, light blue = AI prediction, purple cross = positive point, yellow star = negative point.</p> </div>
+<div align="center"> <img src="assets/point.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1400"/> <p> Point Mode comparison. Left = Vanilla SAM2, Right = STARDUST-MedSAM2. Green = expert outline, light blue = AI prediction, purple cross = positive point, yellow star = negative point.</p> </div>
 
 > *This implementation adapts and extends the approach from [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2), optimizing it for radiotherapy applications with a specific focus on gross tumor volume (GTV) segmentation.*
 
@@ -111,7 +111,7 @@ python stardust_gui.py
 ```
 
 <div align="center">
-  <img src="assests/gui.png" alt="STARDUST-MedSAM2 GUI" width="800"/>
+  <img src="assets/gui.png" alt="STARDUST-MedSAM2 GUI" width="1400"/>
 </div>
 
 ## 🛠️ Model Fine-tuning
