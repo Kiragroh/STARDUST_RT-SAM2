@@ -163,7 +163,7 @@ class SAMInferenceGUI(QMainWindow):
         self.load_settings_to_ui()
     
     def init_ui(self):
-        self.setWindowTitle("SAM2/MedSAM2 Inference Tool")
+        self.setWindowTitle("STARDUST-MedSAM2 Inference Tool")
         self.setGeometry(100, 100, 1200, 900)
         
         main_widget = QWidget()
