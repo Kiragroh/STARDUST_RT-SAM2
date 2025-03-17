@@ -10,6 +10,7 @@ zCollage_mit_Schrift/
 2D_vs_3D_comparison
 2D/
 3D/
+middleSlices2/
 
 # Large files
 STARDUST_MedSAM-MG/checkpoints/sam2_hiera_tiny.pt
