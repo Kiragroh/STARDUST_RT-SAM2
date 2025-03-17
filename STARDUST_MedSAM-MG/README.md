@@ -30,7 +30,7 @@ In Point Mode, the user clicks a point inside the tumor (a "positive point") to 
 **How It Looks:**
 Look at the following picture below. It compares the vanilla SAM2 (left) and our fine-tuned STARDUST-MedSAM2 (right) across 9 slices of a chest CT scan (Slices 75 to 96). In Slice 85 (middle), you’ll see a purple cross (positive point, may be hard to see due to image anonymization but clearer in real scans) inside the tumor and a yellow star (negative point) outside. For STARDUST-MedSAM2 (right), the light blue tumor shape matches the green expert outline almost perfectly, showing it listens to the points well. The vanilla SAM2 (left) gets it wrong, making the tumor too big even with the negative point telling it to stop.
 
-<div align="center"> <img src="assets/point.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="800"/> <p><strong>the following picture:</strong> Point Mode comparison. Left = Vanilla SAM2, Right = STARDUST-MedSAM2. Green = expert outline, light blue = AI prediction, purple cross = positive point, yellow star = negative point.</p> </div>
+<div align="center"> <img src="assets/point.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1200"/> <p><strong>the following picture:</strong> Point Mode comparison. Left = Vanilla SAM2, Right = STARDUST-MedSAM2. Green = expert outline, light blue = AI prediction, purple cross = positive point, yellow star = negative point.</p> </div>
 
 > *This implementation adapts and extends the approach from [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2), optimizing it for radiotherapy applications with a specific focus on gross tumor volume (GTV) segmentation.*
 
