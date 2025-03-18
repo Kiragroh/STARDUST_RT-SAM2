@@ -35,7 +35,7 @@ Look at the following picture below. It compares the vanilla SAM2 (left) and our
 > *This implementation adapts and extends the approach from [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2), optimizing it for radiotherapy applications with a specific focus on gross tumor volume (GTV) segmentation.*
 
 ### 🔄 How the Box Moves Through the Scan  
-STARDUST-MedSAM2 helps doctors identify tumors in 3D medical scans by starting with a small hint—either a box or points—and propagating this hint through all slices of the scan. But how exactly does it work? Here’s a simple explanation for both modes:
+STARDUST-MedSAM2 helps users identify tumors in 3D medical scans by starting with a small hint—either a box or points—and propagating this hint through all slices of the scan. But how exactly does it work? Here’s a simple explanation for both modes:
 
 ### 📦 Box Mode: The Box Leads the Way  
 - **Start:** The doctor draws a box around the tumor on one slice (usually the middle one).  
