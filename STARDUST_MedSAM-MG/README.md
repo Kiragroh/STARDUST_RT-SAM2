@@ -34,6 +34,24 @@ Look at the following picture below. It compares the vanilla SAM2 (left) and our
 
 > *This implementation adapts and extends the approach from [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2), optimizing it for radiotherapy applications with a specific focus on gross tumor volume (GTV) segmentation.*
 
+### 🔄 How the Box Moves Through the Scan  
+STARDUST-MedSAM2 helps doctors identify tumors in 3D medical scans by starting with a small hint—either a box or points—and propagating this hint through all slices of the scan. But how exactly does it work? Here’s a simple explanation for both modes:
+
+### 📦 Box Mode: The Box Leads the Way  
+- **Start:** The doctor draws a box around the tumor on one slice (usually the middle one).  
+- **Finding the Shape:** The AI looks inside the box and outlines the exact shape of the tumor.  
+- **Moving Forward:** For the next slice, the AI takes this shape, draws a new box around it, and finds the tumor again. It repeats this process slice by slice, adjusting the box if the tumor changes.  
+- **In short:** The AI follows the box like a guide and updates it at every step.  
+
+###📍 Point Mode: From Points to a Box  
+- **Start:** The doctor clicks on points—e.g., inside the tumor (“this is it”) and possibly outside (“this is not it”).  
+- **Finding the Shape:** The AI uses the points to outline the tumor and then creates a box around it.  
+- **Moving Forward:** With this box, the AI proceeds to the next slice, finds the tumor again, and adjusts the box—just like in Box Mode.  
+- **In short:** The points initiate the process, but the AI still uses a box to track the tumor.  
+
+### Why This Matters  
+In both modes, the AI takes your hint and propagates it through the entire 3D scan by adapting the box slice by slice. This way, a small input turns into a complete tumor map!
+
 ### 🌟 Why STARDUST-MedSAM2 Beats Vanilla SAM2
 Our fine-tuned STARDUST-MedSAM2 isn’t just a copy of SAM2—it’s been trained on tons of medical data to be smarter for doctors. Here’s why it’s better, based on the images:
 
