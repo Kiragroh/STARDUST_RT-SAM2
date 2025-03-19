@@ -1,7 +1,9 @@
 # 🌟 STARDUST-MedSAM2 🌟
 
 <div align="center"> <img src="assets/bannerCollage.png" alt="Box Mode Example in STARDUST-MedSAM2" width="1400"/> </div>
+
 🔗 **[Main STARDUST Repository](../README.md)**
+
 ## 🔍 Project Overview
 
 STARDUST (Segmentation of Tumors via AI-powered Radiotherapy Database Utilization using Segment Anything Model 2 Technology) is an advanced medical imaging segmentation framework designed to enhance tumor segmentation in radiotherapy planning. Building upon Meta's state-of-the-art SAM2 foundation model (released July 31, 2024), STARDUST-MedSAM2 extends these capabilities to medical imaging contexts with specialized adaptation for 3D medical data.
@@ -120,12 +122,21 @@ python npz_to_npy.py -npz_dir ./data/npz_files -npy_dir ./data/npy_data -target_
 
 ## 🛠️ Model Fine-tuning
 
-For specialized applications, fine-tune the pre-trained models:
+Fine-tune the pre-trained models (use resume to continue training):
 
 ```bash
-python train.py --data_dir /path/to/your/dataset --output_dir /path/to/save/model --num_epochs 50 --batch_size 8
+python finetune_sam2_img.py \
+    -i <input_directory like ./data/npy_data> \
+    -task_name <task_name> \
+    -work_dir <work_directory> \
+    -batch_size <batch_size like 8> \
+    -num_epochs <num_epochs like 500> \
+    -pretrain_model_path <pretrain_model_path like sam2_hiera_tiny.pt> \
+    -model_cfg <model_config_path like sam2_hiera_t.yaml> \
+    -resume <resume_checkpoint_path> \
+    -one_label_per_epoch <true_or_false> \
+    -device cuda:0
 ```
-
 
 ## 💻 Usage
 
