@@ -42,7 +42,8 @@ class CTBrowserApp:
         self.show_rejected = False
         self.predefined_labels = [
             "Metastase-Kopf", "Meningeom", "MetBett-Kopf", "Glomus", "Lymphom", 
-            "Lunge", "Mediastinum", "NNiere", "Bauchwand", "Pankreas", "Orbita", "Sonstiges"
+            "Lunge", "Mediastinum", "NNiere", "Bauchwand", "Sonstiges", "Orbita", "Pankreas",
+            "Oesophagus", "Glio", "Astrozytom", "Milz", "Knochen", "BC", "Extrem", "Axilla"
         ]
         
         # Filter variables aus gespeicherten Einstellungen laden
@@ -108,19 +109,19 @@ class CTBrowserApp:
         # Input Excel File
         ttk.Label(settings_frame, text="Excel-Datei:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.input_excel_var = tk.StringVar(value=self.settings.get("input_excel", ""))
-        ttk.Entry(settings_frame, textvariable=self.input_excel_var, width=50).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Entry(settings_frame, textvariable=self.input_excel_var, width=150).grid(row=0, column=1, padx=5, pady=5)
         ttk.Button(settings_frame, text="Durchsuchen", command=self.browse_excel).grid(row=0, column=2, padx=5, pady=5)
         
         # Output CSV File
         ttk.Label(settings_frame, text="Ausgabe-CSV:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.output_csv_var = tk.StringVar(value=self.settings.get("output_csv", ""))
-        ttk.Entry(settings_frame, textvariable=self.output_csv_var, width=50).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Entry(settings_frame, textvariable=self.output_csv_var, width=150).grid(row=1, column=1, padx=5, pady=5)
         ttk.Button(settings_frame, text="Durchsuchen", command=self.browse_csv).grid(row=1, column=2, padx=5, pady=5)
         
         # Images Folder
         ttk.Label(settings_frame, text="Bilder-Ordner:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.images_folder_var = tk.StringVar(value=self.settings.get("images_folder", ""))
-        ttk.Entry(settings_frame, textvariable=self.images_folder_var, width=50).grid(row=2, column=1, padx=5, pady=5)
+        ttk.Entry(settings_frame, textvariable=self.images_folder_var, width=150).grid(row=2, column=1, padx=5, pady=5)
         ttk.Button(settings_frame, text="Durchsuchen", command=self.browse_folder).grid(row=2, column=2, padx=5, pady=5)
         
         # Filter Frame
@@ -253,7 +254,7 @@ class CTBrowserApp:
         label_buttons_frame.pack(fill=tk.X, padx=5, pady=5)
         
         # Mehrere Reihen von Label-Buttons
-        labels_per_row = 6
+        labels_per_row = 10
         for i, label in enumerate(self.predefined_labels):
             row_num = i // labels_per_row
             col_num = i % labels_per_row
