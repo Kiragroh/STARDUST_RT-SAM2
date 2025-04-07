@@ -19,6 +19,7 @@ def build_sam2(
     mode="eval",
     hydra_overrides_extra=[],
     apply_postprocessing=True,
+    weights_only=False
 ):
 
     if apply_postprocessing:

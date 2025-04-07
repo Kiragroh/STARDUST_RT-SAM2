@@ -333,7 +333,7 @@ sam2_checkpoint = args.sam2_checkpoint
 medsam2_checkpoint = args.medsam2_checkpoint
 num_workers = args.num_workers
 
-sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device, mode="eval", apply_postprocessing=True)
+sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device, mode="eval", apply_postprocessing=True, weights_only=False)
 medsam2_checkpoint = torch.load(medsam2_checkpoint, map_location="cpu", weights_only=False)
 medsam_model = MedSAM2(model=sam2_model)
 medsam_model.load_state_dict(medsam2_checkpoint["model_state_dict"], strict=True)

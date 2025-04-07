@@ -123,7 +123,7 @@ def main():
     
     # MedSAM2 Checkpoint laden
     print(f"Lade MedSAM2 Checkpoint von: {args.medsam2_checkpoint}")
-    checkpoint = torch.load(args.medsam2_checkpoint, map_location="cpu")
+    checkpoint = torch.load(args.medsam2_checkpoint, map_location="cpu", weights_only=False)
     
     # Print checkpoint keys and model info for debugging
     print(f"Checkpoint keys: {checkpoint.keys()}")
