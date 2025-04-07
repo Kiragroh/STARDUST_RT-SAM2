@@ -165,7 +165,7 @@ python ./automate_dicom_workflow.py
 ```
 Resulting in the following workflow:
 <div align="center">
-  <img src="assets/dicomAutomateWorkflow.png" alt="Automation workflow" width="1400"/>
+  <img src="assets/dicomAutomateWorkflow.png" alt="Automation workflow" width="800"/>
 </div>
 
 ## 🔮 Future Development
