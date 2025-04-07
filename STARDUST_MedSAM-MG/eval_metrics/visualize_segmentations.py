@@ -7,6 +7,8 @@ from pathlib import Path
 import glob
 import datetime
 from skimage import measure
+import pandas as pd
+import csv
 
 # Define a consistent color mapping for each organ
 def create_organ_colormap():
@@ -90,7 +92,13 @@ def plot_contours(ax, mask, label_dict, organ_colors):
 
         # Zeichne jede Kontur
         for contour in contours:
-            ax.plot(contour[:, 1], contour[:, 0], linewidth=0.5, color=color[:3])  # RGB-Farbe nutzen
+            # Dickere Linien für alle Konturen, besonders für GTV/Target (rot/gelb)
+            if organ_name in ['GTV', 'GTV+', 'Target', 'Target+']:
+                linewidth = 2.0  # Dickere Linie für wichtige Organe
+            else:
+                linewidth = 1.0  # Standard-Dicke für andere Organe
+                
+            ax.plot(contour[:, 1], contour[:, 0], linewidth=linewidth, color=color[:3])  # RGB-Farbe nutzen
 def load_npz(file_path):
     """
     Load NPZ file with allow_pickle=True to handle object arrays
@@ -390,21 +398,93 @@ def create_comparison_visualization(gt_npz_file, sam2_npz_file, medsam2_npz_file
     
     print(f"Saved visualization to {output_dir}\\{case_name}_slice{slice_indices[-1]}.png")
 
+def collect_and_export_metrics(metrics_dir, output_dir, case_name=None):
+    """
+    Sammelt Metriken aus CSV-Dateien und exportiert sie in eine Excel-Datei.
+    
+    Args:
+        metrics_dir: Verzeichnis mit den Metrik-CSV-Dateien
+        output_dir: Ausgabeverzeichnis für die Excel-Datei
+        case_name: Optional, Name des Falls für den Dateinamen
+    
+    Returns:
+        Pfad zur erstellten Excel-Datei oder None bei Fehler
+    """
+    if not os.path.exists(metrics_dir):
+        print(f"Metrics directory not found: {metrics_dir}")
+        return None
+    
+    # Bestimme den Dateinamen für die Excel-Datei
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    if case_name:
+        excel_filename = f"{case_name}_metrics_{timestamp}.xlsx"
+    else:
+        excel_filename = f"all_metrics_{timestamp}.xlsx"
+    
+    excel_path = os.path.join(output_dir, excel_filename)
+    
+    # Erstelle einen Excel-Writer mit pandas
+    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+        # Suche nach Metrik-Verzeichnissen (2D/3D und sam2/medsam2)
+        metrics_found = False
+        
+        for dimension in ["2D", "3D"]:
+            for model in ["sam2", "medsam2"]:
+                model_metrics_dir = os.path.join(metrics_dir, dimension, model)
+                
+                if not os.path.exists(model_metrics_dir):
+                    continue
+                
+                # Suche nach CSV-Dateien in diesem Verzeichnis
+                csv_files = [f for f in os.listdir(model_metrics_dir) if f.endswith('.csv')]
+                
+                for csv_file in csv_files:
+                    metric_name = csv_file.replace('.csv', '')
+                    csv_path = os.path.join(model_metrics_dir, csv_file)
+                    
+                    try:
+                        # Lese die CSV-Datei
+                        df = pd.read_csv(csv_path)
+                        
+                        # Füge Spalten für Modell und Dimension hinzu
+                        df['model'] = model.upper()
+                        df['dimension'] = dimension
+                        
+                        # Bestimme den Tabellennamen für das Excel-Sheet
+                        sheet_name = f"{dimension}_{model}_{metric_name}"
+                        if len(sheet_name) > 31:  # Excel hat eine Begrenzung von 31 Zeichen für Sheet-Namen
+                            sheet_name = sheet_name[:31]
+                        
+                        # Schreibe die Daten in das Excel-Sheet
+                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        metrics_found = True
+                        print(f"Added metrics from {csv_file} to Excel")
+                    except Exception as e:
+                        print(f"Error processing {csv_file}: {e}")
+    
+    if metrics_found:
+        print(f"Metrics exported to {excel_path}")
+        return excel_path
+    else:
+        print("No metrics found to export")
+        if os.path.exists(excel_path):
+            os.remove(excel_path)  # Lösche die leere Excel-Datei
+        return None
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Visualize segmentations from different models')
     parser.add_argument('-g', '--gt_dir', type=str, required=True, help='Directory containing ground truth NPZ files')
     parser.add_argument('-s2', '--sam2_dir', type=str, required=True, help='Directory containing SAM2 segmentation NPZ files')
     parser.add_argument('-ms2', '--medsam2_dir', type=str, required=True, help='Directory containing MedSAM2 segmentation NPZ files')
     parser.add_argument('-o', '--output_dir', type=str, required=True, help='Directory to save visualization images')
-    parser.add_argument('-n', '--num_slices', type=int, default=5, help='Number of slices to visualize per case')
-    parser.add_argument('-c', '--case', type=str, default=None, help='Specific case to visualize (if None, will process all cases)')
-    parser.add_argument('-s', '--slices', type=int, nargs='+', default=None, help='Specific slice indices to visualize')
-    parser.add_argument('-r', '--rotate', type=int, default=0, help='Rotation to apply to images (0=none, 1=90deg, 2=180deg, 3=270deg)')
-    parser.add_argument('-l', '--labels', type=int, nargs='+', default=None, help='Specific label IDs to visualize (if None, will visualize all labels found in the data)')
-    parser.add_argument('-m', '--metrics_dir', type=str, required=True, help='Directory containing metrics files')
+    parser.add_argument('-m', '--metrics_dir', type=str, required=True, help='Base directory containing metrics')
+    parser.add_argument('-c', '--case', type=str, help='Specific case to process (if not specified, process all cases)')
+    parser.add_argument('-s', '--slices', type=int, nargs='+', help='Specific slice indices to visualize (if not specified, will select automatically)')
+    parser.add_argument('-l', '--labels', type=int, nargs='+', help='Specific label IDs to visualize (if not specified, will visualize all labels)')
     parser.add_argument('--clinical', action='store_true', help='Clinical mode (focus on GTV+/Target+ labels)')
+    parser.add_argument('--rotate', type=int, default=0, choices=[0, 1, 2, 3], help='Rotation to apply (0=none, 1=90deg, 2=180deg, 3=270deg)')
     parser.add_argument('--row_size', type=int, default=2, help='Number of images per row in visualization grid')
-    
+    parser.add_argument('--export_excel', action='store_true', help='Export metrics to Excel file')
     return parser.parse_args()
 
 def main():
@@ -515,6 +595,10 @@ def main():
             clinical=args.clinical,
             row_size=args.row_size
         )
+
+    # Collect and export metrics
+    if args.export_excel:
+        collect_and_export_metrics(args.metrics_dir, args.output_dir)
 
 if __name__ == "__main__":
     main()

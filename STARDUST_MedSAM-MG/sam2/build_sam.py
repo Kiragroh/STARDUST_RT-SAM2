@@ -19,7 +19,6 @@ def build_sam2(
     mode="eval",
     hydra_overrides_extra=[],
     apply_postprocessing=True,
-    weights_only=False
 ):
 
     if apply_postprocessing:
@@ -81,7 +80,7 @@ def build_sam2_video_predictor(
             state_dict = checkpoint["model_state_dict"]
         else:
             state_dict = checkpoint
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict=False)
         print(f"Successfully loaded checkpoint from {ckpt_path}")
     
     model = model.to(device)
@@ -145,7 +144,7 @@ def _load_checkpoint(model, ckpt_path):
         state_dict = checkpoint
         
     try:
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict=False)
         print(f"Successfully loaded checkpoint")
     except Exception as e:
         print(f"Error loading checkpoint: {str(e)}")

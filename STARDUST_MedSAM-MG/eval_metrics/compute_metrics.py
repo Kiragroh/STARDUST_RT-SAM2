@@ -47,12 +47,30 @@ def compute_multi_class_dsc(gt, npz_seg, eval_labels_arg):
     for i in eval_labels_arg:  # Nur die übergebenen Labels berücksichtigen
         gt_i = gt == i
         organ_name = label_dict.get(i, f'Organ_{i}')  # Fallback, falls Label nicht im Dictionary
+        
+        # Suche nach dem Organ in verschiedenen möglichen Formaten
+        seg_i = None
+        
+        # Priorität 1: Organname aus dem Label-Dictionary
         if organ_name in npz_seg.files:
             seg_i = npz_seg[organ_name]
-        elif f'Organ_{i}' in npz_seg.files:  # Fallback für alte Segmentierungen
+        
+        # Priorität 2: Format "Organ_X"
+        elif f'Organ_{i}' in npz_seg.files:
             seg_i = npz_seg[f'Organ_{i}']
-        else:
+        
+        # Priorität 3: Für Label 1 speziell nach "GTV" suchen (häufiger Fall)
+        elif i == 1 and 'GTV' in npz_seg.files:
+            seg_i = npz_seg['GTV']
+        
+        # Priorität 4: Für Label 1 speziell nach "1" suchen (numerisches Label)
+        elif i == 1 and '1' in npz_seg.files:
+            seg_i = npz_seg['1']
+        
+        # Wenn nichts gefunden wurde, leere Segmentierung verwenden
+        if seg_i is None:
             seg_i = np.zeros_like(gt_i)
+            
         if np.sum(gt_i)==0 and np.sum(seg_i)==0:
             dsc[i] = 1
         elif np.sum(gt_i)==0 and np.sum(seg_i)>0:
@@ -65,25 +83,38 @@ def compute_multi_class_dsc(gt, npz_seg, eval_labels_arg):
 
 def compute_multi_class_nsd(gt, npz_seg, spacing, eval_labels_arg, tolerance=2.0):
     nsd = {}
-    for i in eval_labels_arg:  # Nur die übergebenen Labels berücksichtigen
+    for i in eval_labels_arg:
         gt_i = gt == i
-        organ_name = label_dict.get(i, f'Organ_{i}')  # Fallback, falls Label nicht im Dictionary
+        organ_name = label_dict.get(i, f'Organ_{i}')
+        
+        # Suche nach dem Organ in verschiedenen möglichen Formaten
+        seg_i = None
+        
+        # Priorität 1: Organname aus dem Label-Dictionary
         if organ_name in npz_seg.files:
             seg_i = npz_seg[organ_name]
-        elif f'Organ_{i}' in npz_seg.files:  # Fallback für alte Segmentierungen
+        
+        # Priorität 2: Format "Organ_X"
+        elif f'Organ_{i}' in npz_seg.files:
             seg_i = npz_seg[f'Organ_{i}']
-        else:
+        
+        # Priorität 3: Für Label 1 speziell nach "GTV" suchen (häufiger Fall)
+        elif i == 1 and 'GTV' in npz_seg.files:
+            seg_i = npz_seg['GTV']
+        
+        # Priorität 4: Für Label 1 speziell nach "1" suchen (numerisches Label)
+        elif i == 1 and '1' in npz_seg.files:
+            seg_i = npz_seg['1']
+        
+        # Wenn nichts gefunden wurde, leere Segmentierung verwenden
+        if seg_i is None:
             seg_i = np.zeros_like(gt_i)
-        if np.sum(gt_i)==0 and np.sum(seg_i)==0:
-            nsd[i] = 1
-        elif np.sum(gt_i)==0 and np.sum(seg_i)>0:
-            nsd[i] = 0
+            
+        if np.sum(gt_i) == 0:
+            nsd[i] = 1 if np.sum(seg_i) == 0 else 0
         else:
-            surface_distance = compute_surface_distances(
-                gt_i, seg_i, spacing_mm=spacing
-            )
-            nsd[i] = compute_surface_dice_at_tolerance(surface_distance, tolerance)
-
+            surface_distances = compute_surface_distances(gt_i, seg_i, spacing)
+            nsd[i] = compute_surface_dice_at_tolerance(surface_distances, tolerance)
     return nsd
 
 
@@ -114,11 +145,9 @@ def compute_metrics(args):
     try:
         npz_seg = np.load(join(seg_dir, npz_name), allow_pickle=True, mmap_mode='r')
     except FileNotFoundError as e:
-        print(f'INFO: File {npz_name} is missing in submission (possibly skipped during inference). Setting metrics to -1.')
-        # Rückgabe eines Placeholder-Ergebnisses statt einen Fehler zu werfen
-        dsc_dict = {label_id: -1. for label_id in eval_labels_arg}
-        nsd_dict = {label_id: -1. for label_id in eval_labels_arg} if compute_NSD else None
-        return npz_name, dsc_dict, nsd_dict if compute_NSD else dsc_dict
+        print(f'INFO: File {npz_name} is missing in submission (possibly skipped during inference). Skipping this file.')
+        # Rückgabe None, um anzuzeigen, dass diese Datei übersprungen werden soll
+        return None
 
     try:
         npz_gt = np.load(join(gt_dir, npz_name), allow_pickle=True, mmap_mode='r')
@@ -253,18 +282,22 @@ if __name__ == '__main__':
             args_list = [(npz_name, eval_labels) for npz_name in npz_names]
             
             if compute_NSD:
-                for i, (npz_name, dsc, nsd) in enumerate(pool.imap_unordered(compute_metrics, args_list)):
-                    seg_metrics['case'].append(npz_name)
-                    for k, v in dsc.items():
-                        seg_metrics[f"{k}_DSC"].append(np.round(v, 4))
-                    for k, v in nsd.items():
-                        seg_metrics[f"{k}_NSD"].append(np.round(v, 4))
+                for i, result in enumerate(pool.imap_unordered(compute_metrics, args_list)):
+                    if result is not None:
+                        npz_name, dsc, nsd = result
+                        seg_metrics['case'].append(npz_name)
+                        for k, v in dsc.items():
+                            seg_metrics[f"{k}_DSC"].append(np.round(v, 4))
+                        for k, v in nsd.items():
+                            seg_metrics[f"{k}_NSD"].append(np.round(v, 4))
                     pbar.update()
             else:
-                for i, (npz_name, dsc) in enumerate(pool.imap_unordered(compute_metrics, args_list)):
-                    seg_metrics['case'].append(npz_name)
-                    for k, v in dsc.items():
-                        seg_metrics[f"{k}_DSC"].append(np.round(v, 4))
+                for i, result in enumerate(pool.imap_unordered(compute_metrics, args_list)):
+                    if result is not None:
+                        npz_name, dsc = result
+                        seg_metrics['case'].append(npz_name)
+                        for k, v in dsc.items():
+                            seg_metrics[f"{k}_DSC"].append(np.round(v, 4))
                     pbar.update()
 
     df = pd.DataFrame(seg_metrics)

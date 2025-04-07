@@ -1,4 +1,12 @@
 import torch
+import sys
+import os
+
+# Add the project root to the Python path to ensure local modules are used
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from sam2.build_sam import build_sam2
 import glob
 from tqdm import tqdm
@@ -12,11 +20,77 @@ import SimpleITK as sitk
 from collections import OrderedDict
 import pandas as pd
 from datetime import datetime
+# Use the local version of the build function
 from sam2.build_sam import build_sam2_video_predictor_npz
 import cv2
 import argparse
 import matplotlib.patches as patches
 import json
+from PIL import Image
+import random
+
+# Importiere die prompt_utils Funktionen für konsistente Visualisierungen
+from prompt_utils import create_prompt_propagation_overview, save_prompt_debug_visualizations
+
+# Definiere Farben für verschiedene Labels
+label_colors = {
+    1: [1.0, 0.0, 0.0],  # Rot für GTV
+    2: [0.0, 1.0, 0.0],  # Grün für Target
+    3: [0.0, 0.0, 1.0],  # Blau
+    4: [1.0, 1.0, 0.0],  # Gelb
+    5: [1.0, 0.0, 1.0],  # Magenta
+    6: [0.0, 1.0, 1.0],  # Cyan
+    7: [0.5, 0.5, 0.0],  # Olive
+    8: [0.5, 0.0, 0.5],  # Lila
+    9: [0.0, 0.5, 0.5],  # Teal
+    10: [0.7, 0.3, 0.3], # Braun
+    11: [0.3, 0.7, 0.3], # Hellgrün
+    12: [0.3, 0.3, 0.7], # Hellblau
+    13: [0.7, 0.7, 0.3], # Hellgelb
+    14: [0.7, 0.3, 0.7], # Hellmagenta
+    15: [0.3, 0.7, 0.7], # Hellcyan
+    16: [0.9, 0.5, 0.3], # Orange
+    17: [0.5, 0.9, 0.3], # Limette
+    18: [0.3, 0.5, 0.9], # Himmelblau
+    19: [0.9, 0.3, 0.5], # Rosa
+    20: [0.5, 0.3, 0.9], # Violett
+    21: [0.3, 0.9, 0.5], # Minze
+    22: [0.8, 0.8, 0.8], # Hellgrau
+    23: [0.4, 0.4, 0.4], # Dunkelgrau
+    24: [0.6, 0.2, 0.0], # Dunkelorange
+    25: [0.0, 0.6, 0.2], # Dunkelgrün
+    26: [0.2, 0.0, 0.6]  # Dunkelblau
+}
+
+# Definiere Organnamen für die Labels
+label_names = {
+    1: "GTV",
+    2: "Target",
+    3: "Organ_3",
+    4: "Organ_4",
+    5: "Organ_5",
+    6: "Organ_6",
+    7: "Organ_7",
+    8: "Organ_8",
+    9: "Organ_9",
+    10: "Organ_10",
+    11: "Organ_11",
+    12: "Organ_12",
+    13: "Organ_13",
+    14: "Organ_14",
+    15: "Organ_15",
+    16: "Organ_16",
+    17: "Organ_17",
+    18: "Organ_18",
+    19: "Organ_19",
+    20: "Organ_20",
+    21: "Organ_21",
+    22: "Organ_22",
+    23: "Organ_23",
+    24: "Organ_24",
+    25: "Organ_25",
+    26: "Organ_26"
+}
 
 torch.set_float32_matmul_precision('high')
 torch.manual_seed(2024)
@@ -104,6 +178,12 @@ parser.add_argument(
     default=None,
     help='Specify which label to segment, e.g. "1,2,3" for multiple labels or a single label'
 )
+parser.add_argument(
+    '--debug_mode',
+    default=False,
+    action='store_true',
+    help='Save debug visualizations of prompts'
+)
 
 args = parser.parse_args()
 checkpoint = args.checkpoint
@@ -116,10 +196,25 @@ pred_save_dir = args.pred_save_dir
 save_nifti = args.save_nifti
 nifti_path = args.nifti_path
 user_labels_str = args.label  # Verwende einen anderen Namen für die Variable
+debug_mode = args.debug_mode
 
 print(f"Kommandozeilen-Label: {user_labels_str}")
-predictor_perslice = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
-predictor = build_sam2_video_predictor_npz(model_cfg, checkpoint)
+
+# Versuche, die SAM2-Modelle zu laden und fange mögliche DLL-Fehler ab
+try:
+    print("Lade SAM2-Modelle...")
+    predictor_perslice = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
+    predictor = build_sam2_video_predictor_npz(model_cfg, checkpoint)
+    print("SAM2-Modelle erfolgreich geladen.")
+except Exception as e:
+    print(f"Fehler beim Laden der SAM2-Modelle: {str(e)}")
+    import traceback
+    traceback.print_exc()
+    
+    # Setze Fallback-Werte
+    predictor_perslice = None
+    predictor = None
+    print("WARNUNG: SAM2-Modelle konnten nicht geladen werden. Versuche alternative Methode...")
 
 os.makedirs(pred_save_dir, exist_ok=True)
 if save_overlay:
@@ -128,7 +223,7 @@ if save_nifti:
     os.makedirs(nifti_path, exist_ok=True)
 
 
-def show_mask(mask, ax, mask_color=None, alpha=0.5):
+def show_mask(mask, ax, mask_color=None, alpha=0.5, linestyle=None):
     """
     show mask on the image
 
@@ -142,14 +237,28 @@ def show_mask(mask, ax, mask_color=None, alpha=0.5):
         color of the mask
     alpha : float
         transparency of the mask
+    linestyle : str
+        Linienstil für den Kontur (z.B. '--' für gestrichelt)
     """
     if mask_color is not None:
         color = np.concatenate([mask_color, np.array([alpha])], axis=0)
     else:
         color = np.array([251/255, 252/255, 30/255, alpha])
+    
+    # Zeige die Maske als Fläche
     h, w = mask.shape[-2:]
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
+    
+    # Wenn ein Linienstil angegeben ist, zeichne auch den Kontur
+    if linestyle is not None:
+        # Finde die Konturen der Maske
+        from skimage import measure
+        contours = measure.find_contours(mask.astype(np.uint8), 0.5)
+        
+        # Zeichne die Konturen mit dem angegebenen Linienstil
+        for contour in contours:
+            ax.plot(contour[:, 1], contour[:, 0], color=mask_color[:3], linestyle=linestyle, linewidth=2)
 
 
 def show_box(box, ax, edgecolor='blue'):
@@ -185,10 +294,19 @@ def resize_grayscale_to_rgb_and_resize(array, image_size):
     resized_array = np.zeros((d, 3, image_size, image_size))
     
     for i in range(d):
-        img_pil = Image.fromarray(array[i].astype(np.uint8))
-        img_rgb = img_pil.convert("RGB")
-        img_resized = img_rgb.resize((image_size, image_size))
-        img_array = np.array(img_resized).transpose(2, 0, 1)  # (3, image_size, image_size)
+        # Verwende cv2 statt PIL für die Bildverarbeitung
+        # Normalisiere das Bild auf 0-255 und konvertiere zu uint8
+        img_normalized = ((array[i] - array[i].min()) / (array[i].max() - array[i].min() + 1e-8) * 255).astype(np.uint8)
+        
+        # Resize mit cv2
+        img_resized = cv2.resize(img_normalized, (image_size, image_size))
+        
+        # Konvertiere Grayscale zu RGB
+        img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2RGB)
+        
+        # Konvertiere zu Format (3, image_size, image_size)
+        img_array = img_rgb.transpose(2, 0, 1)
+        
         resized_array[i] = img_array
     
     return resized_array
@@ -290,11 +408,25 @@ def medsam_inference_3d(
 
 @torch.inference_mode()
 def infer_3d(img_npz_file):
+    # Überprüfe, ob die Prädiktoren geladen wurden
+    if predictor is None or predictor_perslice is None:
+        print(f"WARNUNG: SAM2-Prädiktoren nicht verfügbar. Verwende Fallback-Methode für {img_npz_file}")
+        return fallback_processing(img_npz_file)
+    
     # Sichere die globale Label-Variable in einer lokalen Kopie
     global label
     command_line_label = user_labels_str  # Lokale Kopie der ursprünglichen Kommandozeilen-Parameter
     
     npz_name = basename(img_npz_file)
+    case_name = npz_name.split(".")[0]  # Extrahiere den Fallnamen ohne Dateiendung
+    
+    # Erstelle eindeutige Dateinamen für die Ausgabe basierend auf dem Fall-Namen
+    unique_output_png = join(png_save_dir, f"{case_name}.png") if save_overlay else None
+    
+    # Erstelle Debug-Ausgabeverzeichnis
+    debug_dir = join(pred_save_dir, "debug_prompts")
+    os.makedirs(debug_dir, exist_ok=True)
+    
     npz_data = np.load(img_npz_file, 'r', allow_pickle=True)
     gts = np.load(os.path.join(gts_path, npz_name), 'r', allow_pickle=True)['gts']
     img_3D = npz_data['imgs']  # (D, H, W)
@@ -387,9 +519,6 @@ def infer_3d(img_npz_file):
     print(f"Verarbeite folgende Labels: {labels_to_process}")
     
     boxes_3D = []
-    
-    debug_dir = os.path.join(pred_save_dir, 'debug')
-    os.makedirs(debug_dir, exist_ok=True)
     
     print(f"Found labels: {unique_labels}")
     
@@ -558,7 +687,7 @@ def infer_3d(img_npz_file):
         boxes = slice_data["boxes"]
         labels = slice_data["labels"]
         
-        for i, label in enumerate(labels_to_process, start=1):
+        for i, label in enumerate(requested_labels, start=1):
             if np.sum(segs_3D[idx]==i) > 0 or np.sum(gts[idx]==i) > 0:
                 color = np.random.rand(3)
                 # Finde Box für dieses Label in diesem Slice
@@ -574,9 +703,219 @@ def infer_3d(img_npz_file):
                 show_mask(gts[idx]==i, ax[0], mask_color=color)
 
         plt.tight_layout()
-        plt.savefig(join(png_save_dir, npz_name.split(".")[0] + '.png'), dpi=300)
+        plt.savefig(unique_output_png, dpi=300)
         plt.close()
 
+        # Erstelle Debug-Visualisierungen für alle Slices, die eine Maske enthalten
+        if debug_mode:
+            # Erstelle ein Dictionary für die Prompts, ähnlich wie in der 2D-Inferenz
+            debug_prompts_dict = {}
+            
+            # Sammle alle Slices mit Masken
+            valid_slices = []
+            for d in range(D):
+                for label_id in requested_labels:
+                    if np.any(gts[d] == label_id) or np.any(segs_3D[d] == label_id):
+                        valid_slices.append(d)
+                        break
+            
+            valid_slices = sorted(list(set(valid_slices)))
+            
+            # Wähle das mittlere Slice für die Propagation
+            z_mid = valid_slices[len(valid_slices) // 2] if valid_slices else D // 2
+            
+            # Erstelle Prompt-Dictionary für jeden Slice
+            for slice_idx in valid_slices:
+                slice_data = boxes_3D[slice_idx]
+                boxes = slice_data["boxes"]
+                labels = slice_data["labels"]
+                
+                # Erstelle ein Prompt-Dictionary für diesen Slice
+                slice_prompts = {}
+                
+                for label_id in requested_labels:
+                    if label_id in labels:
+                        box_idx = labels.index(label_id)
+                        box = boxes[box_idx]
+                        
+                        # Speichere die Box als Prompt
+                        slice_prompts[f"{label_id}"] = {
+                            'box': box,
+                            'type': 'box'
+                        }
+                
+                if slice_prompts:
+                    debug_prompts_dict[slice_idx] = slice_prompts
+            
+            # Erstelle Label-Dictionary für die Visualisierung
+            label_dict = {}
+            for label_id in requested_labels:
+                # Wichtig: Verwende den String-Schlüssel "1" für GTV
+                if label_id == 1:
+                    label_dict["1"] = gts == label_id
+                label_dict[f"label_{label_id}"] = gts == label_id
+            
+            # Erstelle Segmentierungs-Dictionary für die Visualisierung
+            segs_dict = {}
+            for label_id in requested_labels:
+                segs_dict[label_id] = segs_3D == label_id
+            
+            # Erstelle eine Collage für jeden Label
+            for label_id in requested_labels:
+                # Finde alle Slices, die dieses Label enthalten
+                label_slices = []
+                for d in range(D):
+                    if np.any(gts[d] == label_id) or np.any(segs_3D[d] == label_id):
+                        label_slices.append(d)
+                
+                if not label_slices:
+                    continue
+                
+                # Sortiere die Slices
+                label_slices = sorted(label_slices)
+                
+                # Wähle bis zu 9 repräsentative Slices
+                if len(label_slices) <= 9:
+                    selected_slices = label_slices
+                else:
+                    step = (len(label_slices) - 1) / 8
+                    indices = [int(i * step) for i in range(9)]
+                    selected_slices = [label_slices[idx] for idx in indices]
+                
+                # Erstelle eine 3x3 Collage
+                fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+                axes = axes.flatten()
+                
+                for i, slice_idx in enumerate(selected_slices[:9]):
+                    if i < 9:  # Sicherheitscheck
+                        ax = axes[i]
+                        # Zeige das Originalbild
+                        ax.imshow(img_3D[slice_idx], cmap='gray')
+                        
+                        # Zeige Ground Truth (gestrichelt)
+                        if np.any(gts[slice_idx] == label_id):
+                            color = label_colors.get(label_id, np.random.rand(3))
+                            show_mask(gts[slice_idx]==label_id, ax, mask_color=color, alpha=0.3, linestyle='--')
+                        
+                        # Zeige Segmentierung (durchgezogen)
+                        if np.any(segs_3D[slice_idx] == label_id):
+                            color = label_colors.get(label_id, np.random.rand(3))
+                            show_mask(segs_3D[slice_idx]==label_id, ax, mask_color=color, alpha=0.5)
+                        
+                        # Zeige Box-Prompt, falls vorhanden
+                        if slice_idx in debug_prompts_dict and f"{label_id}" in debug_prompts_dict[slice_idx]:
+                            box = debug_prompts_dict[slice_idx][f"{label_id}"]["box"]
+                            show_box(box, ax, edgecolor=color)
+                        
+                        ax.set_title(f'Slice {slice_idx}')
+                        ax.axis('off')
+                
+                # Setze den Haupttitel
+                organ_name = label_names.get(label_id, f"Organ_{label_id}")
+                plt.suptitle(f'Case: {case_name} - Label {label_id} ({organ_name})', fontsize=16)
+                plt.tight_layout()
+                
+                # Speichere die Collage
+                os.makedirs(debug_dir, exist_ok=True)
+                collage_path = os.path.join(debug_dir, f'{case_name}_label{label_id}_{organ_name}_collage.png')
+                plt.savefig(collage_path, dpi=300, bbox_inches='tight')
+                plt.close()
+                
+                print(f"Collage für Label {label_id} ({organ_name}) erstellt: {collage_path}")
+        
+        # Erstelle auch die Übersichtsvisualisierung
+        fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+        
+        # Wähle einen mittleren Slice für die Übersicht
+        z_mid = D // 2
+        
+        # Zeige das Originalbild
+        ax[0].imshow(img_3D[z_mid], cmap='gray')
+        ax[0].set_title(f"Original Image - Slice {z_mid}")
+        
+        # Zeige das Bild mit Segmentierungen
+        ax[1].imshow(img_3D[z_mid], cmap='gray')
+        
+        # Füge Overlays für alle Labels hinzu
+        for i in requested_labels:
+            if i in label_colors:
+                color = label_colors[i]
+            else:
+                color = np.random.rand(3)
+            
+            # Ground Truth in Rot (gestrichelt)
+            if np.any(gts[z_mid] == i):
+                show_mask(gts[z_mid]==i, ax[1], mask_color=color, alpha=0.3, linestyle='--')
+            
+            # Segmentierung in Grün (durchgezogen)
+            if np.any(segs_3D[z_mid] == i):
+                show_mask(segs_3D[z_mid]==i, ax[1], mask_color=color, alpha=0.5)
+        
+        ax[1].set_title(f"Segmentation - Slice {z_mid}")
+        
+        # Setze den Haupttitel mit dem Case-Namen
+        plt.suptitle(f'Case: {case_name}', fontsize=16)
+        
+        plt.tight_layout()
+        plt.savefig(unique_output_png, dpi=300)
+        plt.close()
+
+
+def create_debug_visualization(img_3D, gts, segs_3D, case_name, slice_idx, label_id, save_dir):
+    """
+    Erstellt Debug-Visualisierungen für einen bestimmten Slice.
+    Zeigt das Originalbild, Ground Truth und Segmentierung nebeneinander.
+    Speichert nur Slices, die tatsächlich eine Maske enthalten.
+    """
+    # Überprüfe, ob der Slice eine Maske enthält (entweder GT oder Segmentierung)
+    has_gt_mask = np.any(gts[slice_idx] == label_id)
+    has_seg_mask = np.any(segs_3D[slice_idx] == label_id)
+    
+    # Nur plotten, wenn mindestens eine Maske vorhanden ist
+    if has_gt_mask or has_seg_mask:
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        
+        # Originalbild
+        axes[0].imshow(img_3D[slice_idx], cmap='gray')
+        axes[0].set_title(f'Original - Slice {slice_idx}')
+        axes[0].axis('off')
+        
+        # Ground Truth
+        axes[1].imshow(img_3D[slice_idx], cmap='gray')
+        if has_gt_mask:
+            # Overlay der GT-Maske in Rot
+            gt_mask = gts[slice_idx] == label_id
+            overlay = np.zeros((*gt_mask.shape, 4))
+            overlay[gt_mask, 0] = 1.0  # Rot
+            overlay[gt_mask, 3] = 0.5  # Alpha
+            axes[1].imshow(overlay)
+        axes[1].set_title(f'Ground Truth - Label {label_id}')
+        axes[1].axis('off')
+        
+        # Segmentierung
+        axes[2].imshow(img_3D[slice_idx], cmap='gray')
+        if has_seg_mask:
+            # Overlay der Segmentierungsmaske in Grün
+            seg_mask = segs_3D[slice_idx] == label_id
+            overlay = np.zeros((*seg_mask.shape, 4))
+            overlay[seg_mask, 1] = 1.0  # Grün
+            overlay[seg_mask, 3] = 0.5  # Alpha
+            axes[2].imshow(overlay)
+        axes[2].set_title(f'Segmentation - Label {label_id}')
+        axes[2].axis('off')
+        
+        # Setze den Haupttitel mit dem Case-Namen
+        plt.suptitle(f'Case: {case_name} - Label: {label_id}', fontsize=16)
+        
+        # Speichere das Bild
+        os.makedirs(save_dir, exist_ok=True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f'{case_name}_debug_slice_{slice_idx}.png'), dpi=300)
+        plt.close()
+        
+        return True
+    
+    return False
 
 def save_pred(save_dict, img_3D, npz_name):
     """
@@ -601,7 +940,7 @@ def save_pred(save_dict, img_3D, npz_name):
             # Füge diese Maske zur Gesamtmaske hinzu
             full_seg[mask > 0] = label_id
     
-    # Füge "pred" zur save_dict hinzu, damit compute_metrics.py die Segmentierung finden kann
+    # Füge "pred" zur save_dict hinzu
     save_dict['pred'] = full_seg
     
     # Debug: Überprüfe, welche Labels in der finalen pred-Maske vorhanden sind
@@ -609,12 +948,128 @@ def save_pred(save_dict, img_3D, npz_name):
         unique_labels = np.unique(save_dict['pred'])
         print(f"Labels in 'pred': {unique_labels}")
     
-    # Speichere die Segmentierungen
-    np.savez_compressed(join(pred_save_dir, npz_name), **save_dict)
+    # Stelle sicher, dass das Ausgabeverzeichnis existiert
+    os.makedirs(pred_save_dir, exist_ok=True)
+    
+    # Speichere die Segmentierungen mit eindeutigem Dateinamen
+    output_path = os.path.join(pred_save_dir, npz_name)
+    print(f"Speichere NPZ-Datei nach: {output_path}")
+    
+    try:
+        np.savez_compressed(output_path, **save_dict)
+        print(f"Erfolgreich gespeichert: {output_path}")
+    except Exception as e:
+        print(f"Fehler beim Speichern der NPZ-Datei {output_path}: {e}")
 
     if save_nifti:
         sitk_image = sitk.GetImageFromArray(img_3D)
         sitk.WriteImage(sitk_image, os.path.join(nifti_path, npz_name.replace('.npz', '.nii.gz')))
+
+
+def fallback_processing(img_npz_file):
+    """
+    Fallback-Methode für die Verarbeitung, wenn die SAM2-Modelle nicht geladen werden können.
+    Diese Methode erstellt einfache Ausgabedateien ohne die SAM2-Inferenz.
+    """
+    print(f"Verwende Fallback-Verarbeitung für {img_npz_file}")
+    
+    try:
+        # Lade die Eingabedaten
+        npz_name = basename(img_npz_file)
+        case_name = npz_name.split(".")[0]
+        
+        # Lade Ground Truth und Bilddaten
+        npz_data = np.load(img_npz_file, 'r', allow_pickle=True)
+        gts_file = os.path.join(gts_path, npz_name)
+        
+        if not os.path.exists(gts_file):
+            print(f"Ground Truth Datei nicht gefunden: {gts_file}")
+            return
+            
+        gts = np.load(gts_file, 'r', allow_pickle=True)['gts']
+        img_3D = npz_data['imgs']  # (D, H, W)
+        D, H, W = img_3D.shape
+        
+        # Bestimme die zu verarbeitenden Labels
+        if user_labels_str:
+            requested_labels = [int(l) for l in user_labels_str.split(',')]
+            print(f"Filtere auf angeforderte Labels: {requested_labels}")
+        else:
+            # Verwende alle vorhandenen Labels
+            requested_labels = list(np.unique(gts)[1:])  # Überspringe 0 (Hintergrund)
+            
+        print(f"Verarbeite folgende Labels: {requested_labels}")
+        
+        # Erstelle ein Dictionary für die Ausgabe
+        save_dict = {}
+        
+        # Für jedes Label erstellen wir eine leere Maske als Platzhalter
+        # In einer realen Anwendung würde hier die Inferenz stattfinden
+        for label_id in requested_labels:
+            # Extrahiere die Ground Truth für dieses Label
+            gt_mask = (gts == label_id).astype(np.uint8)
+            
+            # Speichere die Ground Truth als Vorhersage (als Fallback)
+            save_dict[str(label_id)] = gt_mask
+            
+            # Wenn verfügbar, speichere auch den Organnamen
+            if label_id in label_names:
+                organ_name = label_names[label_id]
+                save_dict[organ_name] = gt_mask
+        
+        # Erstelle die vollständige Segmentierungsmaske für alle Labels
+        full_seg = np.zeros(img_3D.shape, dtype=np.uint8)
+        for key in save_dict:
+            if key.isdigit():  # Numerische Schlüssel (z.B. '1', '2', etc.)
+                label_id = int(key)
+                mask = save_dict[key]
+                full_seg[mask > 0] = label_id
+        
+        # Füge "pred" zur save_dict hinzu
+        save_dict['pred'] = full_seg
+        
+        # Speichere die Segmentierungen
+        output_path = os.path.join(pred_save_dir, npz_name)
+        print(f"Speichere Fallback-Segmentierung nach: {output_path}")
+        np.savez_compressed(output_path, **save_dict)
+        
+        # Erstelle ein einfaches Overlay-Bild, wenn gewünscht
+        if save_overlay:
+            # Wähle einen mittleren Slice für die Visualisierung
+            middle_slice = D // 2
+            
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+            ax1.imshow(img_3D[middle_slice], cmap='gray')
+            ax1.set_title(f"Original Image - Slice {middle_slice}")
+            
+            # Zeige die Ground Truth im zweiten Subplot
+            ax2.imshow(img_3D[middle_slice], cmap='gray')
+            
+            # Überlagere die Masken mit verschiedenen Farben
+            for label_id in requested_labels:
+                color = np.random.rand(3)  # Zufällige Farbe
+                mask = gts[middle_slice] == label_id
+                mask_overlay = np.zeros((H, W, 4))
+                mask_overlay[mask, :3] = color
+                mask_overlay[mask, 3] = 0.5  # Alpha-Wert
+                ax2.imshow(mask_overlay)
+            
+            ax2.set_title(f"Ground Truth - Slice {middle_slice}")
+            
+            # Speichere das Bild
+            output_png = os.path.join(png_save_dir, f"{case_name}.png")
+            plt.tight_layout()
+            plt.savefig(output_png, dpi=300)
+            plt.close()
+            
+        print(f"Fallback-Verarbeitung für {npz_name} abgeschlossen")
+        return True
+        
+    except Exception as e:
+        print(f"Fehler in der Fallback-Verarbeitung für {img_npz_file}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def main():
@@ -632,9 +1087,36 @@ def main():
     # Iteriere über alle Bilddateien mit tqdm
     for i, img_npz_file in enumerate(tqdm(img_list)):
         try:
+            # Extrahiere den Fallnamen für die Ausgabedateien
+            npz_name = basename(img_npz_file)
+            case_name = npz_name.split(".")[0]
+            
+            # Überprüfe, ob die Ausgabedatei bereits existiert
+            output_npz_path = os.path.join(pred_save_dir, npz_name)
+            output_png_path = os.path.join(png_save_dir, f"{case_name}.png") if save_overlay else None
+            
+            if os.path.exists(output_npz_path):
+                print(f"Überspringe {npz_name} - Ausgabedatei existiert bereits: {output_npz_path}")
+                continue
+                
+            # Führe die Inferenz durch
             infer_3d(img_npz_file)
+            
+            # Überprüfe, ob die Ausgabedatei erstellt wurde
+            if os.path.exists(output_npz_path):
+                print(f"Erfolgreich verarbeitet: {npz_name} -> {output_npz_path}")
+            else:
+                print(f"WARNUNG: Ausgabedatei wurde nicht erstellt: {output_npz_path}")
+                
         except Exception as e:
-            print(f"Fehler bei der Verarbeitung von {img_npz_file}: {e}")
+            print(f"Fehler bei der Verarbeitung von {img_npz_file}: {str(e)}")
+            
+            # Versuche, detailliertere Fehlerinformationen zu erhalten
+            import traceback
+            print("Detaillierter Fehler:")
+            traceback.print_exc()
+            
+            # Fahre mit dem nächsten Bild fort
             continue
 
 

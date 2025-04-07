@@ -333,10 +333,10 @@ sam2_checkpoint = args.sam2_checkpoint
 medsam2_checkpoint = args.medsam2_checkpoint
 num_workers = args.num_workers
 
-sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device, mode="eval", apply_postprocessing=True, weights_only=False)
+sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device, mode="eval", apply_postprocessing=True)
 medsam2_checkpoint = torch.load(medsam2_checkpoint, map_location="cpu", weights_only=False)
 medsam_model = MedSAM2(model=sam2_model)
-medsam_model.load_state_dict(medsam2_checkpoint["model_state_dict"], strict=True)
+medsam_model.load_state_dict(medsam2_checkpoint["model_state_dict"], strict=False)
 medsam_model.eval()
 sam2_transforms = SAM2Transforms(resolution=1024, mask_threshold=0)
 
@@ -460,7 +460,6 @@ def main(name):
                 z_min, z_max = min(bbox_dict.keys()), max(bbox_dict.keys())
                 mid_slice_bbox_2d = bbox_dict[z_max_area]
                 z_middle = int((z_max - z_min) / 2 + z_min)
-                z_max = min(z_max + 1, img_3D.shape[0])
 
                 for z in range(z_middle, z_max):
                     img_2d = img_3D[z]
@@ -469,9 +468,29 @@ def main(name):
                     img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
                     with torch.no_grad():
                         _features = medsam_model._image_encoder(img_1024_tensor)
-                    box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024 if z == z_middle else get_bbox(
-                        cv2.resize(segs_3d_temp[z - 1], (1024, 1024), interpolation=cv2.INTER_NEAREST)
-                    ) if np.max(segs_3d_temp[z - 1]) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                    
+                    # Berechne die Box für den aktuellen Slice
+                    if z == z_middle:
+                        # Für den mittleren Slice verwenden wir die GT-Box
+                        box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                        used_box = mid_slice_bbox_2d  # GT-Box im Originalmaßstab
+                    else:
+                        # Für andere Slices verwenden wir die Box aus der vorherigen Segmentierung
+                        pre_seg = segs_3d_temp[z - 1]
+                        pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
+                        if np.max(pre_seg1024) > 0:
+                            # Box aus der vorherigen Segmentierung
+                            box_1024 = get_bbox(pre_seg1024)
+                            used_box = box_1024 / 1024 * np.array([W, H, W, H])  # Zurückskalierung
+                        else:
+                            # Fallback zur GT-Box
+                            box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                            used_box = mid_slice_bbox_2d
+                    
+                    # Speichere die tatsächlich verwendete Box für die Visualisierung
+                    if args.debug_mode:
+                        debug_prompts_dict[z] = {"box": used_box}
+                    
                     img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
                     segs_3d_temp[z, img_2d_seg > 0] = 1
 
@@ -483,8 +502,23 @@ def main(name):
                     img_1024_tensor = sam2_transforms(img_3c)[None, ...].to(device)
                     with torch.no_grad():
                         _features = medsam_model._image_encoder(img_1024_tensor)
-                    box_1024 = get_bbox(cv2.resize(segs_3d_temp[z + 1], (1024, 1024), interpolation=cv2.INTER_NEAREST)) if np.max(
-                        segs_3d_temp[z + 1]) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                    
+                    # Berechne die Box für den aktuellen Slice
+                    pre_seg = segs_3d_temp[z + 1]
+                    pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
+                    if np.max(pre_seg1024) > 0:
+                        # Box aus der vorherigen Segmentierung
+                        box_1024 = get_bbox(pre_seg1024)
+                        used_box = box_1024 / 1024 * np.array([W, H, W, H])  # Zurückskalierung
+                    else:
+                        # Fallback zur GT-Box
+                        box_1024 = mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
+                        used_box = mid_slice_bbox_2d
+                    
+                    # Speichere die tatsächlich verwendete Box für die Visualisierung
+                    if args.debug_mode:
+                        debug_prompts_dict[z] = {"box": used_box}
+                    
                     img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
                     segs_3d_temp[z, img_2d_seg > 0] = 1
 
@@ -548,9 +582,17 @@ def main(name):
                     pre_seg = segs_3d_temp[z - 1]
                     pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
                     box_1024 = get_bbox(pre_seg1024) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
-                    used_box = box_1024 / 1024 * np.array([W, H, W, H]) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d
+                    
+                    # Berechne die tatsächlich verwendete Box in Originalkoordinaten
+                    if np.max(pre_seg1024) > 0:
+                        used_box = box_1024 / 1024 * np.array([W, H, W, H])
+                    else:
+                        used_box = mid_slice_bbox_2d
+                        
+                    # Speichere die tatsächlich verwendete Box für die Visualisierung
                     if args.debug_mode:
                         debug_prompts_dict[z] = {"box": used_box}
+                        
                     img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
                     segs_3d_temp[z, img_2d_seg > 0] = 1
 
@@ -566,9 +608,17 @@ def main(name):
                     pre_seg = segs_3d_temp[z + 1]
                     pre_seg1024 = cv2.resize(pre_seg, (1024, 1024), interpolation=cv2.INTER_NEAREST)
                     box_1024 = get_bbox(pre_seg1024) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d / np.array([W, H, W, H]) * 1024
-                    used_box = box_1024 / 1024 * np.array([W, H, W, H]) if np.max(pre_seg1024) > 0 else mid_slice_bbox_2d
+                    
+                    # Berechne die tatsächlich verwendete Box in Originalkoordinaten
+                    if np.max(pre_seg1024) > 0:
+                        used_box = box_1024 / 1024 * np.array([W, H, W, H])
+                    else:
+                        used_box = mid_slice_bbox_2d
+                        
+                    # Speichere die tatsächlich verwendete Box für die Visualisierung
                     if args.debug_mode:
                         debug_prompts_dict[z] = {"box": used_box}
+                        
                     img_2d_seg = medsam_inference(medsam_model, _features, box_1024[None, :], H, W)
                     segs_3d_temp[z, img_2d_seg > 0] = 1
 

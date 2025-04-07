@@ -91,9 +91,15 @@ class SAM2Base(torch.nn.Module):
         # extra arguments used to construct the SAM mask decoder; if not None, it should be a dict of kwargs to be passed into `MaskDecoder` class.
         sam_mask_decoder_extra_args=None,
         compile_image_encoder: bool = False,
+        no_obj_embed_spatial=False,
+        use_signed_tpos_enc_to_obj_ptrs=False,
     ):
         super().__init__()
-
+        self.use_signed_tpos_enc_to_obj_ptrs = use_signed_tpos_enc_to_obj_ptrs
+        
+        # <-- neu hinzugefügte Zeile hier, als Buffer definieren -->
+        self.register_buffer('no_obj_embed_spatial', torch.zeros(1, 64))
+        
         # Part 1: the image backbone
         self.image_encoder = image_encoder
         # Use level 0, 1, 2 for high-res setting, or just level 2 for the default setting
