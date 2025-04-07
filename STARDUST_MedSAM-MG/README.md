@@ -91,7 +91,7 @@ pip install -e .
 Follow the official guide: [PyTorch Installation](https://pytorch.org/get-started/locally/)
 
 # Download pretrained models
-[Download here](https://your-download-link.com)
+[Download here](https://coming soon)
 ```
 
 ## 🔄 Data Preparation
