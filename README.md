@@ -71,7 +71,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - This project builds upon [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2) by Bo Wang's Lab
 - SAM2 developed by Meta Platforms, Inc.
 
-## Funding
+## 🏦 Funding
 
 STARDUST is sponsored by the Federal Ministry of Education and Research (Bundesministerium für Bildung und Forschung, BMBF) as part of the “DataXperiment – Innovative Data Use in Cancer Research and Care” initiative within the National Decade Against Cancer (Nationale Dekade gegen Krebs).
 Funding Code: 01KD2438
