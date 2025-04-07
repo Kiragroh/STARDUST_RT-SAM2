@@ -168,7 +168,7 @@ python ./eval_metrics/compute_metrics.py -s ./segs/2D/medsam2 -g ./data/npz_file
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file in the root directory for details.
 
 ## 🙏 Acknowledgments
 
