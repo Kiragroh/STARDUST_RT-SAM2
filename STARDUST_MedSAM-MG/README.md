@@ -45,7 +45,7 @@ STARDUST-MedSAM2 helps users identify tumors in 3D medical scans by starting wit
 - **Moving Forward:** For the next slice, the AI takes this shape, draws a new box around it, and finds the tumor again. It repeats this process slice by slice, adjusting the box if the tumor changes.  
 - **In short:** The AI follows the box like a guide and updates it at every step.  
 
-###📍 Point Mode: From Points to a Box  
+### 📍 Point Mode: From Points to a Box  
 - **Start:** The doctor clicks on points—e.g., inside the tumor (“this is it”) and possibly outside (“this is not it”).  
 - **Finding the Shape:** The AI uses the points to outline the tumor and then creates a box around it.  
 - **Moving Forward:** With this box, the AI proceeds to the next slice, finds the tumor again, and adjusts the box—just like in Box Mode.  
@@ -165,8 +165,6 @@ python ./eval_metrics/compute_metrics.py -s ./segs/2D/medsam2 -g ./data/npz_file
 - 🔄 DICOM node for clinical workflow integration
 - 📊 Enhanced metadata processing
 - 🎯 Enhanced prompt mechanisms for clinical workflows
-
-```
 
 ## 📝 License
 

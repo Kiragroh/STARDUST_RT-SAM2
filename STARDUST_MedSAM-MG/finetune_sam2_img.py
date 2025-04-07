@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 import os
 import logging
 from matplotlib.animation import FuncAnimation
-
+import sys
 join = os.path.join
+sys.path.insert(0, os.path.abspath('.'))
 from tqdm import tqdm
 from skimage import transform
 import torch
@@ -29,6 +30,9 @@ import glob
 from sam2.build_sam import build_sam2
 from typing import List, Optional, Tuple
 from sam2.modeling.sam2_base import SAM2Base
+from sam2.modeling import sam2_base
+print("Lokaler Import SAM2Base aus:", sam2_base.__file__)
+
 from sam2.utils.transforms import SAM2Transforms
 import cv2
 import torch.optim as optim
@@ -404,9 +408,9 @@ class MetricsPlotter:
         
     def new_epoch(self):
         """Called when a new epoch starts"""
-        if len(self.steps) > 0:
-            self.epoch_boundaries.append(self.total_steps)
         self.current_epoch += 1
+        if self.current_epoch % 50 == 0 and len(self.steps) > 0:
+            self.epoch_boundaries.append(self.total_steps)
         
     def _update_ema(self, current_value, ema_value):
         if ema_value is None:
@@ -617,7 +621,7 @@ def main():
     # Load checkpoint if resuming
     if args.resume and os.path.isfile(args.resume):
         logger.info(f"Loading checkpoint from {args.resume}")
-        checkpoint = torch.load(args.resume, map_location=device)
+        checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
         medsam_model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])

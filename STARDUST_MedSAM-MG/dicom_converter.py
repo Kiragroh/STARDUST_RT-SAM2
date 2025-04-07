@@ -265,12 +265,12 @@ def visualize_slices(image_data, label_data, label_dict, output_dir, case_name, 
     
     print(f"Saved {len(slices_to_viz)} debug visualizations to {os.path.join(output_dir, 'debug_viz')}")
 
-def preprocess_ct_image(ct_array, window_level=40, window_width=400):
+def preprocess_ct_image(image_array, window_level=40, window_width=400):
     """
     Preprocess CT image by applying window/level and normalizing.
     
     Args:
-        ct_array: The raw CT array
+        image_array: The raw CT array
         window_level: Center of window (default 40 HU)
         window_width: Width of window (default 400 HU)
     
@@ -280,7 +280,7 @@ def preprocess_ct_image(ct_array, window_level=40, window_width=400):
     # Apply window/level
     lower_bound = window_level - window_width / 2
     upper_bound = window_level + window_width / 2
-    windowed = np.clip(ct_array, lower_bound, upper_bound)
+    windowed = np.clip(image_array, lower_bound, upper_bound)
     
     # Normalize to 0-255
     normalized = ((windowed - lower_bound) / window_width) * 255.0
@@ -302,13 +302,21 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
     """
     os.makedirs(output_dir, exist_ok=True)
     
-    # Find CT DICOM files (starting with "CT")
+    # Automatische Erkennung des Dateityps (CT oder MR)
     ct_files = sorted(glob.glob(os.path.join(dicom_dir, "CT*.dcm")))
-    if not ct_files:
-        print(f"No CT DICOM files found in {dicom_dir}")
+    mr_files = sorted(glob.glob(os.path.join(dicom_dir, "MR*.dcm")))
+
+    if mr_files:
+        modality = "MR"
+        image_files = mr_files
+    elif ct_files:
+        modality = "CT"
+        image_files = ct_files
+    else:
+        print(f"No CT or MR DICOM files found in {dicom_dir}")
         return None
-    
-    print(f"Found {len(ct_files)} CT DICOM files")
+
+    print(f"Found {len(image_files)} {modality} DICOM files")
     
     # Find structure set file (starting with "RS")
     rs_files = sorted(glob.glob(os.path.join(dicom_dir, "RS*.dcm")))
@@ -320,33 +328,57 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
         print(f"Found structure set file: {os.path.basename(structure_file)}")
     
     # Load CT image series
-    print("Reading CT DICOM series...")
+    print("Reading DICOM series...")
     reader = sitk.ImageSeriesReader()
     dicom_names = reader.GetGDCMSeriesFileNames(dicom_dir)
     
     # Filter to only include files starting with CT if needed
-    if len(ct_files) != len(dicom_names):
-        print(f"Warning: Found {len(dicom_names)} DICOM files but only {len(ct_files)} start with 'CT'")
+    if len(image_files) != len(dicom_names):
+        print(f"Warning: Found {len(dicom_names)} DICOM files but only {len(image_files)} start with 'CT'")
         # Just use the CT files we found instead of all DICOM files
-        reader.SetFileNames(ct_files)
+        reader.SetFileNames(image_files)
     else:
         reader.SetFileNames(dicom_names)
     
     try:
-        ct_image = reader.Execute()
+        image = reader.Execute()
         # Get image array and spacing
-        ct_array = sitk.GetArrayFromImage(ct_image)
-        spacing = ct_image.GetSpacing()
+        image_array = sitk.GetArrayFromImage(image)
+        spacing = image.GetSpacing()
         
-        print(f"CT image loaded: shape={ct_array.shape}, spacing={spacing}")
+        print(f"Image loaded: shape={image_array.shape}, spacing={spacing}, origin={image.GetOrigin()}, direction={image.GetDirection()}")
         
-        # Preprocess CT image (window/level, normalize)
-        ct_array_preprocessed = preprocess_ct_image(ct_array)
+        if modality == "CT":
+            print("Applying CT preprocessing...")
+            WINDOW_LEVEL = 40
+            WINDOW_WIDTH = 400
+            lower_bound = WINDOW_LEVEL - WINDOW_WIDTH / 2
+            upper_bound = WINDOW_LEVEL + WINDOW_WIDTH / 2
+            image_array_preprocessed = np.clip(image_array, lower_bound, upper_bound)
+            image_array_preprocessed = (
+                (image_array_preprocessed - np.min(image_array_preprocessed))
+                / (np.max(image_array_preprocessed) - np.min(image_array_preprocessed))
+                * 255.0
+            )
+        else:  # modality == "MR"
+            print("Applying MR preprocessing...")
+            lower_bound, upper_bound = np.percentile(image_array[image_array > 0], [0.5, 99.5])
+            image_array_preprocessed = np.clip(image_array, lower_bound, upper_bound)
+            image_array_preprocessed = (
+                (image_array_preprocessed - np.min(image_array_preprocessed))
+                / (np.max(image_array_preprocessed) - np.min(image_array_preprocessed))
+                * 255.0
+            )
+            image_array_preprocessed[image_array == 0] = 0
+
+        image_array_preprocessed = np.uint8(image_array_preprocessed)
         
         # Create output dictionary
         output_dict = {
-            'imgs': ct_array_preprocessed,
-            'spacing': spacing
+            'imgs': image_array_preprocessed,
+            'spacing': np.array(spacing),
+            'origin': np.array(image.GetOrigin()),
+            'direction': np.array(image.GetDirection())
         }
         
         # Process structure set if available
@@ -393,19 +425,12 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
                     for roi in ds.ROIContourSequence:
                         roi_number = roi.ReferencedROINumber
                         roi_name = roi_names.get(roi_number, f"ROI_{roi_number}")
-                        
-                        # Remove 'oar ' and 'prv ' prefixes if they exist
-                        if roi_name.lower().startswith('oar '):
-                            roi_name = roi_name[4:]  # Remove 'oar ' prefix (4 characters)
-                        elif roi_name.lower().startswith('prv '):
-                            roi_name = roi_name[4:]  # Remove 'prv ' prefix (4 characters)
-                        
                         roi_name_normalized = roi_name.lower().replace(" ", "").replace("_", "").replace("-", "")
                         
                         print(f"Processing ROI: '{roi_name}' (ID: {roi_number})")
                         
                         # Create a binary mask for this ROI
-                        roi_mask = np.zeros_like(ct_array, dtype=np.uint8)
+                        roi_mask = np.zeros_like(image_array, dtype=np.uint8)
                         has_valid_contours = False
                         
                         # Process contours
@@ -423,22 +448,41 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
                                     points = np.array(contour_data).reshape(num_points, 3)
                                     
                                     # Get slice index (z coordinate)
-                                    z_coord = points[0, 2]
+                                    #z_coord = points[0, 2]
                                     
                                     # Find the closest slice in the CT volume
-                                    z_index = int((z_coord - ct_image.GetOrigin()[2]) / ct_image.GetSpacing()[2])
+                                    #z_index = int((z_coord - image.GetOrigin()[2]) / image.GetSpacing()[2])
+                                    _, _, z_index = image.TransformPhysicalPointToIndex(tuple(points[0]))
+
                                     
                                     # Ensure z_index is within bounds
-                                    if z_index < 0 or z_index >= ct_array.shape[0]:
+                                    if z_index < 0 or z_index >= image_array.shape[0]:
                                         continue
                                     
-                                    # Convert contour points to pixel coordinates
+                                    # Debug-Ausgabe zur Kontrolle der Image-Eigenschaften
+                                    if DEBUG and roi_number == 1 and contour == roi.ContourSequence[0]:
+                                        print("Image Origin:", image.GetOrigin())
+                                        print("Image Direction:", image.GetDirection())
+                                        print("Spacing:", image.GetSpacing())
+                                        sample_contour_point = contour.ContourData[:3]
+                                        sample_idx = image.TransformPhysicalPointToIndex(tuple(sample_contour_point))
+                                        print("Beispiel-Konturpunkt:", sample_contour_point, "=> Index:", sample_idx)
+
+                                    # Use SimpleITK for precise transformation from physical to image indices
                                     pixel_points = []
                                     for point in points:
-                                        # Convert from physical to pixel coordinates
-                                        px = int((point[0] - ct_image.GetOrigin()[0]) / ct_image.GetSpacing()[0])
-                                        py = int((point[1] - ct_image.GetOrigin()[1]) / ct_image.GetSpacing()[1])
-                                        pixel_points.append([px, py])
+                                        try:
+                                            idx = image.TransformPhysicalPointToIndex((point[0], point[1], point[2]))
+                                            px, py, _ = idx
+                                            pixel_points.append([px, py])
+                                        except Exception as e:
+                                            print(f"Error transforming point {point}: {e}")
+                                    # Convert contour points to pixel coordinates (works only for CT)
+                                    #pixel_points = []
+                                    #for point in points:
+                                        #px = int((point[0] - ct_image.GetOrigin()[0]) / ct_image.GetSpacing()[0])
+                                        #py = int((point[1] - ct_image.GetOrigin()[1]) / ct_image.GetSpacing()[1])
+                                        #pixel_points.append([px, py])
                                     
                                     # Convert to numpy array
                                     pixel_points = np.array(pixel_points, dtype=np.int32)
@@ -446,7 +490,7 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
                                     # Draw the contour on the slice
                                     if len(pixel_points) > 2:  # Need at least 3 points for a polygon
                                         # Create a mask for this contour
-                                        mask = np.zeros((ct_array.shape[1], ct_array.shape[2]), dtype=np.uint8)
+                                        mask = np.zeros((image_array.shape[1], image_array.shape[2]), dtype=np.uint8)
                                         cv2.fillPoly(mask, [pixel_points], 1)
                                         
                                         # Add to the ROI mask
@@ -454,11 +498,6 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
                         
                         # If ROI has valid contours and sufficient volume, add it to our collection
                         if has_valid_contours and np.sum(roi_mask) > 10:  # Minimum size threshold (lowered to ensure small GTVs are included)
-                            # Skip structures starting with "körper" or "outer" or other not wanted (case-insensitive)
-                            if roi_name_normalized.startswith("körper") or roi_name_normalized.startswith("outer") or roi_name_normalized.startswith("dosis") or roi_name_normalized.startswith("bl i"):
-                                print(f"  -> Skipping structure '{roi_name}' (filter set)")
-                                continue
-                                
                             # Determine if this is GTV+ or Target+
                             is_gtv_plus = any(gtv_name.lower().replace(" ", "").replace("_", "").replace("-", "") in roi_name_normalized 
                                              for gtv_name in possible_gtv_names)
@@ -513,7 +552,7 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
                     print("\nSTEP 3: Creating final segmentation with priority hierarchy")
                     
                     # Create empty segmentation
-                    segmentation = np.zeros_like(ct_array, dtype=np.uint8)
+                    segmentation = np.zeros_like(image_array, dtype=np.uint8)
                     
                     # Sort other ROIs by volume size (largest first)
                     other_rois = [(roi_id, info) for roi_id, info in structure_info.items() 
@@ -634,17 +673,19 @@ def convert_dicom_to_npz(dicom_dir, output_dir, case_name, save_nii=False):
                 import traceback
                 traceback.print_exc()
                 # Create empty segmentation
-                output_dict['gts'] = np.zeros_like(ct_array, dtype=np.uint8)
+                output_dict['gts'] = np.zeros_like(image_array, dtype=np.uint8)
                 output_dict['labels'] = {0: "background"}
         else:
             # Create empty segmentation if no structure set
-            output_dict['gts'] = np.zeros_like(ct_array, dtype=np.uint8)
+            output_dict['gts'] = np.zeros_like(image_array, dtype=np.uint8)
             output_dict['labels'] = {0: "background"}
         
         # Save as NPZ
         npz_path = os.path.join(output_dir, f"{case_name}.npz")
         np.savez_compressed(npz_path, **output_dict)
         print(f"Saved NPZ file to {npz_path}")
+        # Direkt vor np.savez_compressed
+        print("Final keys in NPZ:", output_dict.keys())
         
         # Create debug visualizations if enabled
         if DEBUG and 'gts' in output_dict and np.any(output_dict['gts'] > 0):
