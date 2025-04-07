@@ -121,14 +121,14 @@ python finetune_sam2_img.py \
     -task_name <task_name> \
     -work_dir <work_directory> \
     -batch_size <batch_size like 8> \
-    -num_epochs <num_epochs like 500> \
+    -num_epochs <num_epochs like 100> \
     -pretrain_model_path <pretrain_model_path like sam2_hiera_tiny.pt> \
     -model_cfg <model_config_path like sam2_hiera_t.yaml> \
     -resume <resume_checkpoint_path> \
     -one_label_per_epoch <true_or_false> \
     -device cuda:0
 ```
-
+<div align="left"> <img src="assets/RT-SAM2_2.1t_MR+CT_train_loss.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="500"/> </div>
 ## 💻 Usage
 
 ### 🎮 Interactive Interface
