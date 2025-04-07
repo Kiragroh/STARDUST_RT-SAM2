@@ -68,7 +68,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- This project builds upon [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2https://github.com/facebookresearch/sam2 by Bo Wang's Lab
+- This project builds upon [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2)https://github.com/facebookresearch/sam2 by Bo Wang's Lab
 - [SAM2](https://github.com/facebookresearch/sam2) developed by Meta Platforms, Inc.
 
 ## 🏦 Funding
