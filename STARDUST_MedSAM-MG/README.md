@@ -158,7 +158,7 @@ python ./evaluate_checkpoints.py
 Here you can see partial results across a cohort of datasets: 
 <div align="center"> <img src="assets/resultsCollage.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1400"/> <p><strong>Image 3:</strong> Heatmap showing the median Dice scores for both vanilla and fine-tuned models (left). Dataset overview on the right (generated with <code>dataset_overview.py</code>). Grey values indicate the portion of the dataset used for testing (remaining part used for training).</p> </div>
 
-## 📊 DICOM-Automation
+## ⚙️ DICOM-Automation
 To enable a quick adoption in clinical or research workflows with treatment planning systems we developed a DICOM-Automation workflow you can start with:
 ```bash
 python ./automate_dicom_workflow.py
