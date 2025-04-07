@@ -73,11 +73,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Funding
 
-STARDUST is funded by the Federal Ministry of Education and Research (Bundesministerium für Bildung und Forschung, BMBF) as part of the “DataXperiment – Innovative Data Use in Cancer Research and Care” initiative within the National Decade Against Cancer (Nationale Dekade gegen Krebs).
+STARDUST is sponsored by the Federal Ministry of Education and Research (Bundesministerium für Bildung und Forschung, BMBF) as part of the “DataXperiment – Innovative Data Use in Cancer Research and Care” initiative within the National Decade Against Cancer (Nationale Dekade gegen Krebs).
 Funding Code: 01KD2438
 Project Duration: October 2024 – March 2025
 
 About the Initiative:
-DataXperiment promotes short-term projects that explore innovative applications of already available, structured, and annotated data in oncology.
-
-![Logo BMBF](assets/internet_in_farbe_en.png)
+DataXperiment promotes short-term projects that explore innovative applications of already available, structured, and annotated data in oncology.<div style="text-align: right;">
+  <img src="assets/internet_in_farbe_en.jpg" alt="Logo BMBF" width="220">
+</div>
