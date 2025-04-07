@@ -6,10 +6,10 @@
 
 ## 🔍 Project Overview
 
-STARDUST (Segmentation of Tumors via AI-powered Radiotherapy Database Utilization using Segment Anything Model 2 Technology) is an advanced medical imaging segmentation framework designed to enhance tumor segmentation in radiotherapy planning. Building upon Meta's state-of-the-art SAM2 foundation model (released July 31, 2024), STARDUST-MedSAM2 extends these capabilities to medical imaging contexts with specialized adaptation for 3D medical data.
+STARDUST (Segmentation of Tumors via AI-powered Radiotherapy Database Utilization using Segment Anything Model 2 Technology) is an advanced medical imaging segmentation framework designed to enhance tumor segmentation in radiotherapy planning. Building upon Meta's state-of-the-art SAM2 foundation model (released July 31, 2024), STARDUST-MedSAM2 extends these capabilities to medical imaging contexts with specialized adaptation for 3D medical data for radiotherapy (RT).
 
 ### 🏥 Why Does This Matter?
-Medical imaging plays a crucial role in cancer diagnosis and treatment, with tumor segmentation being a critical task in radiotherapy (RT). Traditionally, radiation oncologists manually outline tumors on CT and MRI scans, a time-consuming and highly variable process. While AI has already improved organ segmentation, precise tumor segmentation remains a major challenge. The STARDUST project leverages cutting-edge AI to significantly enhance the speed and consistency of tumor delineation, making RT planning more efficient and precise.
+Medical imaging plays a crucial role in cancer diagnosis and treatment, with tumor segmentation being a critical task in RT. Traditionally, radiation oncologists manually outline tumors on CT and MRI scans, a time-consuming and highly variable process. While AI has already improved organ segmentation, precise tumor segmentation remains a major challenge. The STARDUST project leverages cutting-edge AI to significantly enhance the speed and consistency of tumor delineation, making RT planning more efficient and precise.
 
 Recent advances in artificial intelligence (AI) have opened new opportunities for medical image segmentation, particularly with interactive medical image segmentation (IMIS). IMIS enhances accuracy by integrating iterative feedback from medical professionals. However, most methods struggle with the limited availability of 3D medical data, making generalization difficult. The Segment Anything Model (SAM) was initially developed for 2D segmentation, requiring extensive manual slice-by-slice annotations when applied to 3D medical imaging. The next-generation SAM2, trained on videos, introduces a paradigm shift by enabling full annotation propagation from a single 2D slice to an entire 3D medical volume. 
 
@@ -22,17 +22,17 @@ STARDUST-MedSAM2 is designed to make tumor segmentation easier and faster for us
 In Box Mode, the user draws a rectangular box around the tumor on one slice of a 3D medical scan (like a CT or MRI). This box tells the AI, "The tumor is somewhere in here." The AI then figures out the exact shape of the tumor inside the box and extends this outline to other slices in the 3D scan, creating a full 3D picture of the tumor.
 
 **How It Looks:**
-Check out the following picture below. It shows 15 slices of a brain CT scan (Slices 144 to 161). The yellow box is the "ground truth" (the expert-drawn tumor area), and the red box is what the AI predicts and carries across slices. The light blue area inside the box is the AI’s guess at the tumor’s shape. Notice how the red box follows the yellow box closely as the tumor changes size and shape across slices—like from Slice 161 (small tumor) to Slice 162 (biggest tumor) and back to Slice 144 (small again). This shows how the AI uses one box to map the tumor in 3D.
+Check out the following picture below. It shows 9 slices of a CT scan (Slices 75 to 96). The yellow box is the "ground truth" (the expert-drawn tumor area), and the red box is what the AI predicts and carries across slices. The light blue area inside the box is the AI’s guess at the tumor’s shape.
 
-<div align="center"> <img src="assets/box.png" alt="Box Mode Example in STARDUST-MedSAM2" width="1400"/> <p> Box Mode in action across 15 brain CT slices. Yellow box = expert outline, red box = AI’s propagated box, light blue = AI’s tumor prediction.</p> </div>
+<div align="center"> <img src="assets/box.png" alt="Box Mode Example in STARDUST-MedSAM2" width="1400"/> <p> <p><strong>Image 1:</strong> Box Mode in action across 15 brain CT slices. Yellow box = expert outline, red box = AI’s propagated box, light blue = AI’s tumor prediction.</p> </div>
 
 ### 📍 Point Mode: Pointing at the Tumor
-In Point Mode, the user clicks a point inside the tumor (a "positive point") to say, "This is part of the tumor," and can add a point outside (a "negative point") to say, "This isn’t the tumor." The AI uses these hints to draw the tumor’s shape and extend it across the 3D scan.
+In Point Mode, the user clicks a point inside the tumor (a "positive point") to say, "This is part of the tumor," and can add a point outside (a "negative point") to say, "This isn’t the tumor." The AI uses these hints to draw the tumor’s shape and extend this information across the 3D scan via box propagation like before.
 
 **How It Looks:**
-Look at the following picture below. It compares the vanilla SAM2 (left) and our fine-tuned STARDUST-MedSAM2 (right) across 9 slices of a chest CT scan (Slices 75 to 96). In Slice 85 (middle), you’ll see a purple cross (positive point, may be hard to see due to image anonymization but clearer in real scans) inside the tumor and a yellow star (negative point) outside. For STARDUST-MedSAM2 (right), the light blue tumor shape matches the green expert outline almost perfectly, showing it listens to the points well. The vanilla SAM2 (left) gets it wrong, making the tumor too big even with the negative point telling it to stop.
+Look at the following picture below. It compares the vanilla SAM2 (left) and our fine-tuned STARDUST-MedSAM2 (right) across 9 slices of a CT scan (Slices 56 to 102). In Slice 79 (middle), you’ll see several purple crosses (positive points, may be hard to see due to image anonymization but clearer in real scans) inside the tumor and yellow stars (negative points) outside. For STARDUST-MedSAM2 (right), the light blue tumor shape matches the green expert outline almost perfectly, showing it listens to the points well. The vanilla SAM2 (left) gets it wrong, making the tumor too big even with the negative point telling it to stop.
 
-<div align="center"> <img src="assets/point.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1400"/> <p> Point Mode comparison. Left = Vanilla SAM2, Right = STARDUST-MedSAM2. Green = expert outline, light blue = AI prediction, purple cross = positive point, yellow star = negative point.</p> </div>
+<div align="center"> <img src="assets/point.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1400"/> <p> <p><strong>Image 2:</strong> Point Mode comparison. Left = Vanilla SAM2, Right = STARDUST-MedSAM2. Green = expert outline, light blue = AI prediction, purple cross = positive point, yellow star = negative point.</p> </div>
 
 > *This implementation adapts and extends the approach from [MedSAM2](https://github.com/bowang-lab/MedSAM/tree/MedSAM2), optimizing it for radiotherapy applications with a specific focus on gross tumor volume (GTV) segmentation.*
 
@@ -40,28 +40,22 @@ Look at the following picture below. It compares the vanilla SAM2 (left) and our
 STARDUST-MedSAM2 helps users identify tumors in 3D medical scans by starting with a small hint—either a box or points—and propagating this hint through all slices of the scan. But how exactly does it work? Here’s a simple explanation for both modes:
 
 ### 📦 Box Mode: The Box Leads the Way  
-- **Start:** The doctor draws a box around the tumor on one slice (usually the middle one).  
+- **Start:** The user draws a box around the tumor on one slice (usually the middle one).  
 - **Finding the Shape:** The AI looks inside the box and outlines the exact shape of the tumor.  
 - **Moving Forward:** For the next slice, the AI takes this shape, draws a new box around it, and finds the tumor again. It repeats this process slice by slice, adjusting the box if the tumor changes.  
 - **In short:** The AI follows the box like a guide and updates it at every step.  
 
 ### 📍 Point Mode: From Points to a Box  
-- **Start:** The doctor clicks on points—e.g., inside the tumor (“this is it”) and possibly outside (“this is not it”).  
+- **Start:** The user clicks on points—e.g., inside the tumor (“this is it”) and possibly outside (“this is not it”).  
 - **Finding the Shape:** The AI uses the points to outline the tumor and then creates a box around it.  
 - **Moving Forward:** With this box, the AI proceeds to the next slice, finds the tumor again, and adjusts the box—just like in Box Mode.  
 - **In short:** The points initiate the process, but the AI still uses a box to track the tumor.  
 
 ### Why This Matters  
-In both modes, the AI takes your hint and propagates it through the entire 3D scan by adapting the box slice by slice. This way, a small input turns into a complete tumor map!
+In both modes, the AI takes your hint and propagates it through the entire 3D scan by adapting the box slice by slice. This way, a small input turns into a complete 3D tumor map!
 
 ### 🌟 Why STARDUST-MedSAM2 Beats Vanilla SAM2
-Our fine-tuned STARDUST-MedSAM2 isn’t just a copy of SAM2—it’s been trained on tons of medical data to be smarter for doctors. Here’s why it’s better, based on the images:
-
-More Accurate: In Image 2 (below), a head CT scan comparison, the vanilla SAM2 (left) often misses parts of the tumor (light blue is smaller than green expert outline), while STARDUST-MedSAM2 (right) gets it right, matching the green outline closely across slices like 56 to 102. This means fewer mistakes in spotting the whole tumor.
-Listens Better: In Image 1, STARDUST-MedSAM2 uses the positive and negative points to nail the tumor shape (right side), while vanilla SAM2 ignores them and draws too much (left side). This makes our model easier for doctors to tweak.
-
-### 🚀 What This Means for You
-With STARDUST-MedSAM2, doctors can draw a box or click a few points, and the AI does the hard work—mapping tumors in 3D with precision. Compared to vanilla SAM2, our model is more accurate, easier to guide, and built for medical scans, making radiotherapy planning faster and more reliable. These images prove it: STARDUST-MedSAM2 is a game-changer for cancer treatment!
+Our fine-tuned STARDUST-MedSAM2 isn’t just a copy of SAM2—it’s been trained on tumor contours from a radiotherapy clinical database.
 
 ## 🚀 Features
 
@@ -103,14 +97,11 @@ STARDUST-MedSAM2 works with medical images in NPZ format. To convert your DICOM 
 ```bash
 # Using a CSV file (traditional method):
 python create_npz_files.py --input_dir /path/to/dicom_folder --output_dir /path/to/npz_output --csv_file /path/to/cases.csv
-
-# Recursive scan of directories without CSV:
-python create_npz_files.py --input_dir /path/to/dicom_folder --output_dir /path/to/npz_output --recursive
 ```
 
-The script supports two modes of operation:
-1. **CSV-based processing**: Uses a CSV file with patient information to locate and process specific DICOM folders
-2. **Recursive directory scanning**: Automatically finds and processes any directory containing CT and RS DICOM files (multiple CT*.dcm files and one RS*.dcm file)
+**CSV-based processing**: Uses a CSV file with patient information to locate and process specific DICOM folders
+
+🔜 **Recursive directory scanning**: Automatically finds and processes any directory containing CT and RS DICOM files (multiple CT*.dcm files and one RS*.dcm file)
 
 This utility can process DICOM files from multiple sources, including those exported from TPS systems, and generates pseudonymized data for research purposes.
 
@@ -122,7 +113,7 @@ python npz_to_npy.py -npz_dir ./data/npz_files -npy_dir ./data/npy_data -target_
 
 ## 🛠️ Model Fine-tuning
 
-Fine-tune the pre-trained models (use resume to continue training):
+Fine-tune the pre-trained models (use resume to continue training). We started with SAM2-tiny for quicker fine-tuning:
 
 ```bash
 python finetune_sam2_img.py \
@@ -154,11 +145,18 @@ python stardust_gui.py
 
 ## 📊 Evaluation
 
-Compute segmentation metrics:
+Compute segmentation metrics for one instance:
 
 ```bash
 python ./eval_metrics/compute_metrics.py -s ./segs/2D/medsam2 -g ./data/npz_files -csv_dir ./results_inf_metric/2D/medsam2
 ```
+Compute segmentation metrics and visualization for multiple vanila and finetuned models. Models has to be present in ./work_dir folder. At the moment the locations and mappings are hardcoded.
+
+```bash
+python ./evaluate_checkpoints.py
+```
+Here you can see partial results across a cohort of datasets: 
+<div align="center"> <img src="assets/resultsCollage.png" alt="Point Mode Comparison: Vanilla SAM2 vs. STARDUST-MedSAM2" width="1400"/> <p><strong>Image 3:</strong> Heatmap showing the median Dice scores for both vanilla and fine-tuned models (left). Dataset overview on the right (generated with <code>dataset_overview.py</code>). Grey values indicate the portion of the dataset used for testing (remaining part used for training).</p> </div>
 
 ## 🔮 Future Development
 

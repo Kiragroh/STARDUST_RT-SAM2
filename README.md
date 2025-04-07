@@ -13,7 +13,7 @@ This repository serves as the central hub for the STARDUST ecosystem, containing
 The STARDUST repository consists of the following core submodules:
 
 ### 1️⃣ **STARDUST-MedSAM2**
-A customized version of the **Segment Anything Model 2 (SAM2)** adapted for tumor segmentation in radiotherapy planning. This module includes fine-tuning methods, evaluation tools, and a GUI for interactive segmentation. 
+A customized version of the **Segment Anything Model 2 (SAM2)** adapted for tumor segmentation in radiotherapy planning. This module includes fine-tuning methods, evaluation tools, DICOM-automation workflow and a GUI for easy inference. 
 
 🔗 **[More details](./STARDUST_MedSAM-MG/README.md)**
 
