@@ -84,15 +84,15 @@ pip install -e .
 # Install PyTorch 2.3.1+
 Follow the official guide: [PyTorch Installation](https://pytorch.org/get-started/locally/)
 
-# Download pretrained models
-[Download here](https://coming soon)
 ```
+[Download here](https://drive.google.com/file/d/18nRQ7KVwAz0wpgf6sqd7hQNuP8AdHdVN/view?usp=sharing) a STARDUST-pretrained model compatible with both CT and MR data.
+It was trained for 100 epochs on a dataset of 231 cases.
 
 ## 🔄 Data Preparation
 
 ### 📂 DICOM to NPZ Conversion
 
-STARDUST-MedSAM2 works with medical images in NPZ format. To convert your DICOM images:
+STARDUST-MedSAM2 works with medical images in NPZ format. To convert your DICOM images (use the MR-version for general usage (less dependet on formated csv file)):
 
 ```bash
 # Using a CSV file (traditional method):
