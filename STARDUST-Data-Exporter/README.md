@@ -65,11 +65,9 @@ This module is part of the **STARDUST** ecosystem:
 🔹 **STARDUST-Data-Exporter** → Converts selected cases into training-ready datasets 🔄  
 🔹 **STARDUST-MedSAM2** → Uses the processed datasets for AI-powered tumor segmentation  
 
-```
-
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file in the root directory for details.
 
 ## 🙏 Acknowledgments
 

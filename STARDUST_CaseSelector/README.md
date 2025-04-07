@@ -73,11 +73,9 @@ The STARDUST-Case-Selector is part of the **STARDUST** ecosystem:
 - 📊 **Automatic quality assessment** for segmentation consistency
 - 🚀 **Integration with TPS for real-time case selection**
 
-```
-
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file in the root directory for details.
 
 ## 🙏 Acknowledgments
 

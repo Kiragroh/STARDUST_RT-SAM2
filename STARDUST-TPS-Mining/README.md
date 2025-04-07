@@ -95,11 +95,9 @@ This module is part of the **STARDUST** ecosystem:
 
 - 🔄 **Direct integration with Eclipse TPS via custom DICOMnode**.
 
-```
-
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file in the root directory for details.
 
 ## 🙏 Acknowledgments
 
